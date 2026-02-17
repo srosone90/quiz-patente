@@ -1,0 +1,502 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { supabase, Question, saveQuizResult, saveQuizAnswers, getQuestionsByCategory, getWrongAnswers } from '@/lib/supabase'
+
+interface QuizEngineProps {
+  plan?: 'free' | 'premium'
+  category?: string
+  mode?: 'review' | 'normal'
+}
+
+interface UserAnswer {
+  question_id: number
+  question_text: string
+  user_answer: string
+  correct_answer: string
+  is_correct: boolean
+  category: string
+  explanation?: string
+}
+
+export default function QuizEngine({ plan = 'free', category, mode = 'normal' }: QuizEngineProps) {
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
+  const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([])
+  const [showResult, setShowResult] = useState(false)
+  const [quizFinished, setQuizFinished] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [canProceed, setCanProceed] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState(0)
+
+  const isFree = plan === 'free'
+  const totalQuestions = mode === 'review' ? questions.length : (isFree ? 10 : 20)
+  const timeLimit = isFree ? 600 : 1800 // 10 min for free, 30 min for premium (in seconds)
+
+  useEffect(() => {
+    loadQuestions()
+  }, [plan, category, mode])
+
+  // Timer countdown
+  useEffect(() => {
+    if (loading || quizFinished || questions.length === 0) return
+
+    // Initialize timer when questions are loaded
+    if (timeRemaining === 0) {
+      setTimeRemaining(timeLimit)
+    }
+
+    const timer = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timer)
+          finishQuiz()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [loading, quizFinished, questions.length, timeRemaining])
+
+  async function loadQuestions() {
+    try {
+      setLoading(true)
+      let fetchedQuestions: Question[] = []
+
+      if (mode === 'review') {
+        // Modalità Ripassa Errori: carica domande sbagliate
+        const { data: wrongAnswers, error: wrongError } = await getWrongAnswers(20)
+        if (wrongError) throw wrongError
+        if (!wrongAnswers || wrongAnswers.length === 0) {
+          setQuizFinished(true)
+          setLoading(false)
+          return
+        }
+        
+        // Ottieni le domande complete dal database
+        const questionIds = Array.from(new Set(wrongAnswers.map((wa: any) => wa.question_id)))
+        const { data, error } = await supabase
+          .from('questions')
+          .select('*')
+          .in('id', questionIds)
+        
+        if (error) throw error
+        fetchedQuestions = data || []
+      } else if (category) {
+        // Modalità filtro per categoria (premium only)
+        const { data: catQuestions, error: catError } = await getQuestionsByCategory(category, isFree ? 10 : 20)
+        if (catError) throw catError
+        fetchedQuestions = catQuestions || []
+      } else {
+        // Modalità normale: domande random
+        const { data, error } = await supabase
+          .from('questions')
+          .select('*')
+        
+        if (error) throw error
+        
+        const allQuestions = data || []
+        const shuffled = allQuestions.sort(() => Math.random() - 0.5)
+        fetchedQuestions = shuffled.slice(0, totalQuestions)
+      }
+
+      setQuestions(fetchedQuestions)
+      setLoading(false)
+    } catch (error) {
+      console.error('Errore nel caricamento domande:', error)
+      setLoading(false)
+    }
+  }
+
+  const currentQuestion = questions[currentIndex]
+  const correctCount = userAnswers.filter(a => a.is_correct).length
+  const incorrectCount = userAnswers.filter(a => !a.is_correct).length
+  const scorePercentage = Math.round((correctCount / totalQuestions) * 100)
+  const hasPassed = scorePercentage >= 90
+
+  function handleAnswerSelect(answer: string) {
+    if (showResult) return
+    setSelectedAnswer(answer)
+    setCanProceed(false)
+  }
+
+  function handleNext() {
+    if (!selectedAnswer || !currentQuestion) return
+
+    const isCorrect = selectedAnswer === currentQuestion.correct_answer
+    
+    // Salva risposta utente
+    const newAnswer: UserAnswer = {
+      question_id: currentQuestion.id,
+      question_text: currentQuestion.question,
+      user_answer: selectedAnswer,
+      correct_answer: currentQuestion.correct_answer,
+      is_correct: isCorrect,
+      category: currentQuestion.category || '',
+      explanation: currentQuestion.explanation
+    }
+    
+    setUserAnswers(prev => [...prev, newAnswer])
+    setShowResult(true)
+    setCanProceed(true)
+  }
+
+  async function handleContinue() {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(prev => prev + 1)
+      setSelectedAnswer(null)
+      setShowResult(false)
+      setCanProceed(false)
+    } else {
+      await finishQuiz()
+    }
+  }
+
+  async function finishQuiz() {
+    setQuizFinished(true)
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Salva risultato quiz
+      const { data: resultData, error: resultError } = await saveQuizResult(
+        scorePercentage,
+        correctCount,
+        totalQuestions,
+        isFree ? 'free' : 'premium'
+      )
+
+      if (resultError) throw resultError
+
+      // Salva risposte individuali per "Ripassa Errori"
+      if (resultData && resultData[0]?.id) {
+        const quizResultId = resultData[0].id
+        const answersToSave = userAnswers.map(ans => ({
+          questionId: ans.question_id,
+          questionText: ans.question_text,
+          userAnswer: ans.user_answer,
+          correctAnswer: ans.correct_answer,
+          isCorrect: ans.is_correct,
+          category: ans.category
+        }))
+        await saveQuizAnswers(quizResultId, answersToSave)
+      }
+    } catch (error) {
+      console.error('Errore nel salvataggio risultati:', error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="text-center py-20">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 dark:border-accent-500 mx-auto"></div>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">Caricamento domande...</p>
+      </div>
+    )
+  }
+
+  if (mode === 'review' && questions.length === 0) {
+    return (
+      <div className="card text-center py-16">
+        <div className="text-6xl mb-6">🎉</div>
+        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-accent-400 dark:to-accent-600 bg-clip-text text-transparent mb-4">
+          Complimenti!
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 text-lg mb-8">
+          Non hai errori da ripassare. Continua così!
+        </p>
+        <a 
+          href="/dashboard"
+          className="btn-primary inline-block"
+        >
+          Torna alla Dashboard
+        </a>
+      </div>
+    )
+  }
+
+  if (quizFinished) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="card text-center py-12 animate-fadeIn">
+          <div className="text-7xl mb-6">
+            {hasPassed ? '🎉' : '📚'}
+          </div>
+          
+          <h2 className="text-4xl font-bold mb-4">
+            {hasPassed ? (
+              <span className="bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
+                Complimenti!
+              </span>
+            ) : (
+              <span className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+                Continua a studiare
+              </span>
+            )}
+          </h2>
+          
+          <div className="text-6xl font-bold my-8" style={{ color: hasPassed ? '#10b981' : '#ef4444' }}>
+            {scorePercentage}%
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 mb-10 max-w-md mx-auto">
+            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6 rounded-2xl border-2 border-green-200 dark:border-green-700">
+              <div className="text-4xl font-bold text-green-600 dark:text-green-400">{correctCount}</div>
+              <div className="text-sm font-semibold text-green-700 dark:text-green-300 mt-1">Corrette</div>
+            </div>
+            <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-6 rounded-2xl border-2 border-red-200 dark:border-red-700">
+              <div className="text-4xl font-bold text-red-600 dark:text-red-400">{incorrectCount}</div>
+              <div className="text-sm font-semibold text-red-700 dark:text-red-300 mt-1">Sbagliate</div>
+            </div>
+          </div>
+
+          <div className="text-gray-700 dark:text-gray-300 mb-10 max-w-lg mx-auto">
+            {hasPassed ? (
+              <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-6 rounded-r-xl">
+                <p className="text-lg font-medium">
+                  Hai superato il quiz! Per l'esame è richiesta una percentuale del <strong className="text-green-700 dark:text-green-300">90%</strong>.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 p-6 rounded-r-xl">
+                <p className="text-lg font-medium">
+                  Per superare l'esame serve il <strong className="text-orange-700 dark:text-orange-300">90%</strong>.<br />
+                  Massimo <strong className="text-orange-700 dark:text-orange-300">2 errori</strong> su 20 domande.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4 max-w-md mx-auto">
+            <a 
+              href="/dashboard"
+              className="btn-primary block"
+            >
+              Torna alla Dashboard
+            </a>
+            <button
+              onClick={() => window.location.reload()}
+              className="block w-full bg-gray-100 dark:bg-dark-border text-gray-700 dark:text-gray-300 px-8 py-4 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all transform hover:scale-[1.02]"
+            >
+              Nuovo Quiz
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentQuestion) {
+    return (
+      <div className="card text-center py-20">
+        <p className="text-red-600 dark:text-red-400 text-lg">Nessuna domanda disponibile</p>
+      </div>
+    )
+  }
+
+  const answers = currentQuestion.answers || []
+
+  // Format time as MM:SS
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${minutes}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const timeWarning = timeRemaining <= 60 // Last minute warning
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 animate-fadeIn">
+      {/* Header con progresso */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 dark:from-accent-400 dark:to-accent-600 rounded-xl flex items-center justify-center">
+              <span className="text-white text-xl">
+                {mode === 'review' ? '🔄' : category ? '📂' : '📝'}
+              </span>
+            </div>
+            <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+              {mode === 'review' ? 'Modalità Ripasso' : category ? `Categoria: ${category}` : 'Quiz Completo'}
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className={`text-sm font-bold px-4 py-2 rounded-xl transition-all ${
+              timeWarning 
+                ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 animate-pulse shadow-lg shadow-red-200 dark:shadow-red-900/30' 
+                : 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+            }`}>
+              ⏱️ {formatTime(timeRemaining)}
+            </span>
+            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+              Domanda <span className="text-primary-600 dark:text-accent-500">{currentIndex + 1}</span> di {questions.length}
+            </span>
+          </div>
+        </div>
+        
+        <div className="w-full bg-gray-200 dark:bg-dark-border rounded-full h-4 overflow-hidden shadow-inner">
+          <div 
+            className="bg-gradient-to-r from-primary-500 via-primary-600 to-primary-700 dark:from-accent-400 dark:via-accent-500 dark:to-accent-600 h-4 rounded-full transition-all duration-500 ease-out shadow-lg"
+            style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+          />
+        </div>
+
+        {/* Contatori risposte */}
+        <div className="flex gap-6 mt-6">
+          <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-xl border border-green-200 dark:border-green-700">
+            <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+            </svg>
+            <span className="text-sm font-bold text-green-700 dark:text-green-300">
+              Corrette: {correctCount}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl border border-red-200 dark:border-red-700">
+            <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+            </svg>
+            <span className="text-sm font-bold text-red-700 dark:text-red-300">
+              Sbagliate: {incorrectCount}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Domanda */}
+      <div className="card-hover mb-8">
+        <h2 className="text-2xl font-bold mb-8 text-gray-900 dark:text-white leading-relaxed">
+          {currentQuestion.question}
+        </h2>
+
+        <div className="space-y-4">
+          {answers.map((answer, index) => {
+            const letter = String.fromCharCode(65 + index)
+            const isSelected = selectedAnswer === answer
+            const isCorrect = answer === currentQuestion.correct_answer
+            const showCorrection = showResult
+
+            let classes = 'w-full text-left p-5 rounded-xl border-2 transition-all duration-200 font-medium'
+            
+            if (showCorrection) {
+              if (isCorrect) {
+                classes += ' bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border-green-500 dark:border-green-400 text-green-900 dark:text-green-100 shadow-lg shadow-green-200 dark:shadow-green-900/30'
+              } else if (isSelected && !isCorrect) {
+                classes += ' bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/20 border-red-500 dark:border-red-400 text-red-900 dark:text-red-100 shadow-lg shadow-red-200 dark:shadow-red-900/30'
+              } else {
+                classes += ' bg-gray-50 dark:bg-dark-bg border-gray-200 dark:border-dark-border text-gray-500 dark:text-gray-500'
+              }
+            } else if (isSelected) {
+              classes += ' bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/20 border-primary-600 dark:border-accent-500 text-primary-900 dark:text-primary-100 shadow-lg shadow-primary-200 dark:shadow-primary-900/30 scale-[1.02]'
+            } else {
+              classes += ' bg-white dark:bg-dark-bg border-gray-200 dark:border-dark-border text-gray-800 dark:text-gray-200 hover:border-primary-300 dark:hover:border-accent-600 hover:bg-gray-50 dark:hover:bg-dark-border hover:scale-[1.01] cursor-pointer'
+            }
+
+            return (
+              <button
+                key={index}
+                onClick={() => handleAnswerSelect(answer)}
+                disabled={showResult}
+                className={classes}
+                style={{
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'normal'
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-8 h-8 bg-current bg-opacity-10 rounded-lg flex items-center justify-center font-bold">
+                    {letter}
+                  </span>
+                  <span className="flex-1 pt-0.5">{answer}</span>
+                  {showCorrection && isCorrect && (
+                    <svg className="flex-shrink-0 w-6 h-6 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                    </svg>
+                  )}
+                  {showCorrection && isSelected && !isCorrect && (
+                    <svg className="flex-shrink-0 w-6 h-6 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+                    </svg>
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Spiegazione (solo premium) */}
+        {showResult && currentQuestion.explanation && (
+          <div className="mt-8 pt-8 border-t-2 border-gray-200 dark:border-dark-border animate-slideUp">
+            {!isFree ? (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-6 rounded-r-2xl">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                    <span className="text-white text-xl">💡</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-blue-900 dark:text-blue-300 mb-3 text-lg">
+                      Spiegazione
+                    </h3>
+                    <p className="text-blue-800 dark:text-blue-200 leading-relaxed">
+                      {currentQuestion.explanation}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gradient-to-r from-accent-50 to-amber-50 dark:from-accent-900/20 dark:to-amber-900/20 border-l-4 border-accent-500 dark:border-accent-400 p-6 rounded-r-2xl">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 bg-accent-500 rounded-xl flex items-center justify-center">
+                    <span className="text-white text-xl">🔒</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-accent-900 dark:text-accent-300 mb-3 text-lg">
+                      Spiegazione Premium
+                    </h3>
+                    <p className="text-accent-800 dark:text-accent-200 mb-4 leading-relaxed">
+                      Le spiegazioni dettagliate sono disponibili solo per gli utenti premium.
+                    </p>
+                    <a 
+                      href="/pricing"
+                      className="inline-block bg-accent-500 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-accent-600 transition-all transform hover:scale-105 shadow-lg"
+                    >
+                      Passa a Premium
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Pulsanti azione */}
+      <div className="flex gap-4">
+        {!showResult ? (
+          <button
+            onClick={handleNext}
+            disabled={!selectedAnswer}
+            className={`flex-1 py-5 rounded-xl font-bold text-lg transition-all transform ${
+              selectedAnswer
+                ? 'btn-primary'
+                : 'bg-gray-200 dark:bg-dark-border text-gray-400 dark:text-gray-600 cursor-not-allowed'
+            }`}
+          >
+            Conferma Risposta
+          </button>
+        ) : (
+          <button
+            onClick={handleContinue}
+            className="flex-1 btn-primary py-5 text-lg"
+          >
+            {currentIndex < questions.length - 1 ? 'Prossima Domanda →' : 'Termina Quiz'}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}

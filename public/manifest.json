@@ -1,0 +1,48 @@
+{
+  "name": "Quiz Ruolo Conducenti - Taxi/NCC",
+  "short_name": "Quiz Taxi/NCC",
+  "description": "Preparati all'esame Taxi/NCC di Palermo ed Enna con quiz aggiornati",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#002147",
+  "theme_color": "#002147",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot1.png",
+      "sizes": "540x720",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Quiz Gratuito",
+      "short_name": "Quiz",
+      "description": "Inizia un quiz gratuito",
+      "url": "/quiz?plan=free",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Storico",
+      "short_name": "Storico",
+      "description": "Vedi i tuoi risultati",
+      "url": "/",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}
