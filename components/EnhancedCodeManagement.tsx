@@ -7,6 +7,7 @@ import {
   updateAccessCode,
   searchAccessCodes,
   deactivateAccessCode,
+  generateAccessCode,
   type AccessCode
 } from '@/lib/supabase'
 
@@ -14,8 +15,10 @@ export default function EnhancedCodeManagement() {
   const [codes, setCodes] = useState<AccessCode[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [showGenerateModal, setShowGenerateModal] = useState(false)
   const [editingCode, setEditingCode] = useState<AccessCode | null>(null)
   const [selectedCodes, setSelectedCodes] = useState<number[]>([])
+  const [generating, setGenerating] = useState(false)
 
   // Filtri
   const [searchTerm, setSearchTerm] = useState('')
@@ -28,6 +31,15 @@ export default function EnhancedCodeManagement() {
     duration_days: 30,
     max_uses: 1,
     is_active: true
+  })
+
+  // Form per generazione nuovo codice
+  const [generateForm, setGenerateForm] = useState({
+    school_name: '',
+    plan_type: 'last_minute' as 'last_minute' | 'senza_pensieri',
+    duration_days: 30,
+    max_uses: 1,
+    expires_at: ''
   })
 
   useEffect(() => {
@@ -98,6 +110,45 @@ export default function EnhancedCodeManagement() {
     }
   }
 
+  async function handleGenerateCode(e: React.FormEvent) {
+    e.preventDefault()
+    
+    if (!generateForm.school_name.trim()) {
+      alert('Inserisci il nome della scuola guida')
+      return
+    }
+
+    setGenerating(true)
+    try {
+      const newCode = await generateAccessCode(
+        generateForm.school_name,
+        generateForm.plan_type,
+        generateForm.duration_days,
+        generateForm.max_uses,
+        generateForm.expires_at || undefined
+      )
+      
+      alert(`✅ Codice generato con successo!\n\nCodice: ${newCode}\n\nInvia questo codice alla scuola guida.`)
+      
+      // Reset form
+      setGenerateForm({
+        school_name: '',
+        plan_type: 'last_minute',
+        duration_days: 30,
+        max_uses: 1,
+        expires_at: ''
+      })
+      
+      setShowGenerateModal(false)
+      loadCodes()
+    } catch (error: any) {
+      console.error('Errore generazione codice:', error)
+      alert(`❌ Errore nella generazione del codice:\n\n${error.message || error}`)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   async function handleBulkDelete() {
     if (selectedCodes.length === 0) return
     
@@ -149,6 +200,15 @@ export default function EnhancedCodeManagement() {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           Gestione Codici Accesso
         </h2>
+        <button
+          onClick={() => setShowGenerateModal(true)}
+          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Genera Nuovo Codice
+        </button>
       </div>
 
       {/* Filtri */}
@@ -438,6 +498,139 @@ export default function EnhancedCodeManagement() {
                 </button>
                 <button type="submit" className="btn-primary">
                   Salva Modifiche
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Genera Nuovo Codice */}
+      {showGenerateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+              Genera Nuovo Codice Accesso
+            </h3>
+            
+            <form onSubmit={handleGenerateCode} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nome Scuola Guida <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={generateForm.school_name}
+                  onChange={(e) => setGenerateForm({ ...generateForm, school_name: e.target.value })}
+                  placeholder="Es: Autoscuola Roma Centro"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                           bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tipo Piano <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={generateForm.plan_type}
+                  onChange={(e) => setGenerateForm({ ...generateForm, plan_type: e.target.value as any })}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                           bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="last_minute">Last Minute (30 giorni)</option>
+                  <option value="senza_pensieri">Senza Pensieri (1 anno)</option>
+                </select>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Durata (giorni) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={generateForm.duration_days}
+                    onChange={(e) => setGenerateForm({ ...generateForm, duration_days: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Giorni di validità dall'attivazione</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Utilizzi Massimi <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={generateForm.max_uses}
+                    onChange={(e) => setGenerateForm({ ...generateForm, max_uses: parseInt(e.target.value) })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Quante volte può essere usato</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Data Scadenza Codice (opzionale)
+                </label>
+                <input
+                  type="date"
+                  value={generateForm.expires_at}
+                  onChange={(e) => setGenerateForm({ ...generateForm, expires_at: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                           bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+                <p className="text-xs text-gray-500 mt-1">Lascia vuoto per nessuna scadenza</p>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>Riepilogo:</strong> Verrà generato un codice {generateForm.plan_type === 'last_minute' ? 'Last Minute' : 'Senza Pensieri'} 
+                  per "{generateForm.school_name || '...'}", valido {generateForm.duration_days} giorni dall'attivazione, 
+                  utilizzabile {generateForm.max_uses} {generateForm.max_uses === 1 ? 'volta' : 'volte'}.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setShowGenerateModal(false)}
+                  disabled={generating}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800
+                           disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Annulla
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={generating}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg
+                           font-medium disabled:opacity-50 disabled:cursor-not-allowed
+                           flex items-center gap-2"
+                >
+                  {generating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Generazione...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Genera Codice
+                    </>
+                  )}
                 </button>
               </div>
             </form>
