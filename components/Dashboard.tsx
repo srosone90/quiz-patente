@@ -10,6 +10,13 @@ import StatisticsChart from './StatisticsChart'
 import DashboardMenu from './DashboardMenu'
 import GamificationProgress from './GamificationProgress'
 import Leaderboard from './Leaderboard'
+import PublicProfile from './PublicProfile'
+import ReferralSystem from './ReferralSystem'
+import ExamCountdown from './ExamCountdown'
+import TemporalChart from './TemporalChart'
+import CategoryHeatmap from './CategoryHeatmap'
+import PDFExport from './PDFExport'
+import LanguageSwitcher from './LanguageSwitcher'
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
@@ -87,10 +94,17 @@ export default function Dashboard() {
     { id: 'overview', label: 'Panoramica', icon: '🏠', description: 'Informazioni generali' },
     { id: 'progress', label: 'Progresso', icon: '🏆', description: 'Livelli e trofei' },
     { id: 'leaderboard', label: 'Classifica', icon: '👥', description: 'Top studenti' },
+    { id: 'profile', label: 'Profilo', icon: '👤', description: 'Profilo pubblico' },
+    { id: 'referral', label: 'Referral', icon: '🎁', description: 'Invita amici' },
+    { id: 'exam', label: 'Esame', icon: '📅', description: 'Countdown esame' },
     { id: 'quiz', label: 'Avvia Quiz', icon: '🎯', description: 'Inizia una simulazione' },
     { id: 'review', label: 'Ripasso', icon: '🔄', description: 'Ripassa gli errori' },
     { id: 'statistics', label: 'Statistiche', icon: '📊', description: 'Analisi prestazioni' },
-    { id: 'history', label: 'Storico', icon: '📝', description: 'Quiz completati' }
+    { id: 'temporal', label: 'Andamento', icon: '📈', description: 'Grafici temporali' },
+    { id: 'heatmap', label: 'Heatmap', icon: '🗺️', description: 'Categorie' },
+    { id: 'pdf', label: 'Esporta PDF', icon: '📄', description: 'Download report' },
+    { id: 'history', label: 'Storico', icon: '📝', description: 'Quiz completati' },
+    { id: 'language', label: 'Lingua', icon: '🌐', description: 'Cambia lingua' }
   ]
 
   return (
@@ -300,6 +314,55 @@ export default function Dashboard() {
               </p>
             </div>
             <GamificationProgress userId={user.id} />
+          </div>
+        )}
+
+        {/* Sezione Profilo */}
+        {activeSection === 'profile' && (
+          <div className="space-y-6">
+            <PublicProfile />
+          </div>
+        )}
+
+        {/* Sezione Referral */}
+        {activeSection === 'referral' && (
+          <div className="space-y-6">
+            <ReferralSystem />
+          </div>
+        )}
+
+        {/* Sezione Esame */}
+        {activeSection === 'exam' && (
+          <div className="space-y-6">
+            <ExamCountdown />
+          </div>
+        )}
+
+        {/* Sezione Grafici Temporali */}
+        {activeSection === 'temporal' && (
+          <div className="space-y-6">
+            <TemporalChart />
+          </div>
+        )}
+
+        {/* Sezione Heatmap */}
+        {activeSection === 'heatmap' && (
+          <div className="space-y-6">
+            <CategoryHeatmap />
+          </div>
+        )}
+
+        {/* Sezione PDF Export */}
+        {activeSection === 'pdf' && (
+          <div className="space-y-6">
+            <PDFExport />
+          </div>
+        )}
+
+        {/* Sezione Lingua */}
+        {activeSection === 'language' && (
+          <div className="space-y-6">
+            <LanguageSwitcher />
           </div>
         )}
 

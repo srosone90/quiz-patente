@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { I18nProvider } from '@/contexts/I18nContext'
 import ThemeToggle from '@/components/ThemeToggle'
 import PWARegister from '@/components/PWARegister'
 
@@ -44,11 +45,13 @@ export default function RootLayout({
     <html lang="it">
       <body className={inter.className}>
         <ThemeProvider>
-          <PWARegister />
-          <div className="min-h-screen bg-white dark:bg-dark-bg transition-colors">
-            <ThemeToggle />
-            {children}
-          </div>
+          <I18nProvider>
+            <PWARegister />
+            <div className="min-h-screen bg-white dark:bg-dark-bg transition-colors">
+              <ThemeToggle />
+              {children}
+            </div>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>
