@@ -45,7 +45,7 @@ export default function ReferralSystem() {
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('*')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .single();
 
     let referralCode = profile?.referral_code;
@@ -55,7 +55,8 @@ export default function ReferralSystem() {
       referralCode = generateReferralCode();
       await supabase
         .from('user_profiles')
-        .upsert({ user_id: userId, referral_code: referralCode });
+        .update({ referral_code: referralCode })
+        .eq('id', userId);
     }
 
     // Get referrals made by this user

@@ -191,8 +191,8 @@ export default function PDFExport() {
     // Get user profile
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('username')
-      .eq('user_id', userId)
+      .select('display_name')
+      .eq('id', userId)
       .single();
 
     // Get user progress
@@ -261,7 +261,7 @@ export default function PDFExport() {
     }));
 
     return {
-      username: profile?.username || 'Utente',
+      username: profile?.display_name || 'Utente',
       totalQuizzes,
       totalQuestions,
       correctAnswers,

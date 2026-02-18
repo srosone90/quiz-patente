@@ -40,7 +40,7 @@ export default function PublicProfile() {
     const { data: profileData } = await supabase
       .from('user_profiles')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .single();
 
     // Get progress
@@ -59,13 +59,14 @@ export default function PublicProfile() {
     if (profileData) {
       const fullProfile: Profile = {
         ...profileData,
+        username: profileData.display_name || '',
         total_xp: progressData?.total_xp || 0,
         level: progressData?.level || 1,
         achievements_count: count || 0,
       };
       setProfile(fullProfile);
       setEditForm({
-        username: profileData.username || '',
+        username: profileData.display_name || '',
         bio: profileData.bio || '',
         is_public: profileData.is_public || false,
       });
@@ -84,11 +85,11 @@ export default function PublicProfile() {
     const { error } = await supabase
       .from('user_profiles')
       .update({
-        username: editForm.username,
+        display_name: editForm.username,
         bio: editForm.bio,
         is_public: editForm.is_public,
       })
-      .eq('user_id', profile.user_id);
+      .eq('id', profile.user_id);
 
     if (!error) {
       setProfile({

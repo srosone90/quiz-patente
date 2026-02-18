@@ -48,14 +48,21 @@ export default function QuestionComments({ questionId, questionText }: QuestionC
       .from('question_comments')
       .select(`
         *,
-        user_profiles!inner(username)
+        user_profiles!inner(display_name)
       `)
       .eq('question_id', questionId)
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (!error && data) {
-      setComments(data);
+      // Map display_name to username for compatibility
+      const commentsWithUsername = data.map((comment: any) => ({
+        ...comment,
+        user_profiles: {
+          username: comment.user_profiles?.display_name || 'Utente'
+        }
+      }));
+      setComments(commentsWithUsername);
     }
     setIsLoading(false);
   }
