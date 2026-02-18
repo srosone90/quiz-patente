@@ -1020,3 +1020,176 @@ export async function searchAccessCodes(filters: {
 
   return { data: filtered, error: null }
 }
+
+// ============================================
+// GAMIFICATION FUNCTIONS
+// ============================================
+
+export interface UserProgress {
+  id: string
+  user_id: string
+  total_xp: number
+  level: number
+  current_streak: number
+  longest_streak: number
+  last_activity_date: string
+  total_quizzes_completed: number
+  total_questions_answered: number
+  correct_answers: number
+}
+
+export interface Achievement {
+  id: string
+  code: string
+  name_it: string
+  name_en: string
+  description_it: string
+  description_en: string
+  icon: string
+  xp_reward: number
+  tier: 'bronze' | 'silver' | 'gold' | 'platinum'
+  requirement_type: string
+  requirement_value: number
+}
+
+export interface UserAchievement {
+  id: string
+  user_id: string
+  achievement_id: string
+  unlocked_at: string
+  achievement?: Achievement
+}
+
+// Get user progress (XP, level, streak)
+export async function getUserProgress(userId: string): Promise<UserProgress | null> {
+  const { data, error } = await supabase
+    .from('user_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+  
+  if (error) {
+    console.error('Error fetching user progress:', error)
+    return null
+  }
+  
+  return data
+}
+
+// Get all achievements
+export async function getAchievements(): Promise<Achievement[]> {
+  const { data, error } = await supabase
+    .from('achievements')
+    .select('*')
+    .order('tier', { ascending: true })
+    .order('xp_reward', { ascending: true })
+  
+  if (error) {
+    console.error('Error fetching achievements:', error)
+    return []
+  }
+  
+  return data || []
+}
+
+// Get user unlocked achievements
+export async function getUserAchievements(userId: string): Promise<UserAchievement[]> {
+  const { data, error } = await supabase
+    .from('user_achievements')
+    .select(`
+      *,
+      achievement:achievements(*)
+    `)
+    .eq('user_id', userId)
+    .order('unlocked_at', { ascending: false })
+  
+  if (error) {
+    console.error('Error fetching user achievements:', error)
+    return []
+  }
+  
+  return data || []
+}
+
+// Check and unlock achievements
+export async function checkAndUnlockAchievements(userId: string): Promise<void> {
+  const progress = await getUserProgress(userId)
+  if (!progress) return
+
+  const allAchievements = await getAchievements()
+  const userAchievements = await getUserAchievements(userId)
+  const unlockedCodes = userAchievements.map(ua => ua.achievement?.code)
+
+  for (const achievement of allAchievements) {
+    // Skip already unlocked
+    if (unlockedCodes.includes(achievement.code)) continue
+
+    let shouldUnlock = false
+
+    // Check requirements
+    switch (achievement.requirement_type) {
+      case 'quiz_count':
+        shouldUnlock = progress.total_quizzes_completed >= achievement.requirement_value
+        break
+      case 'streak':
+        shouldUnlock = progress.current_streak >= achievement.requirement_value
+        break
+      case 'level':
+        shouldUnlock = progress.level >= achievement.requirement_value
+        break
+      case 'accuracy':
+        const accuracy = (progress.correct_answers / progress.total_questions_answered) * 100
+        shouldUnlock = accuracy >= achievement.requirement_value && progress.total_quizzes_completed >= 50
+        break
+    }
+
+    if (shouldUnlock) {
+      await unlockAchievement(userId, achievement.id)
+    }
+  }
+}
+
+// Unlock specific achievement
+async function unlockAchievement(userId: string, achievementId: string): Promise<void> {
+  const { error } = await supabase
+    .from('user_achievements')
+    .insert({ user_id: userId, achievement_id: achievementId })
+  
+  if (error) {
+    console.error('Error unlocking achievement:', error)
+  }
+}
+
+// Get weekly leaderboard
+export async function getWeeklyLeaderboard(limit: number = 10): Promise<any[]> {
+  const { data, error } = await supabase
+    .from('user_progress')
+    .select('user_id, total_xp, level, total_quizzes_completed')
+    .order('total_xp', { ascending: false })
+    .limit(limit)
+  
+  if (error) {
+    console.error('Error fetching leaderboard:', error)
+    return []
+  }
+  
+  return data || []
+}
+
+// Calculate XP for level up milestones
+export function getXPForLevel(level: number): number {
+  return level * level * 100 // livello^2 * 100
+}
+
+export function getXPProgress(currentXP: number, level: number): { current: number, needed: number, percentage: number } {
+  const currentLevelXP = getXPForLevel(level)
+  const nextLevelXP = getXPForLevel(level + 1)
+  const xpIntoLevel = currentXP - currentLevelXP
+  const xpNeededForNext = nextLevelXP - currentLevelXP
+  
+  return {
+    current: xpIntoLevel,
+    needed: xpNeededForNext,
+    percentage: Math.min(100, (xpIntoLevel / xpNeededForNext) * 100)
+  }
+}

@@ -8,6 +8,8 @@ import CategorySelector from './CategorySelector'
 import ReviewMode from './ReviewMode'
 import StatisticsChart from './StatisticsChart'
 import DashboardMenu from './DashboardMenu'
+import GamificationProgress from './GamificationProgress'
+import Leaderboard from './Leaderboard'
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
@@ -83,6 +85,8 @@ export default function Dashboard() {
 
   const menuItems = [
     { id: 'overview', label: 'Panoramica', icon: '🏠', description: 'Informazioni generali' },
+    { id: 'progress', label: 'Progresso', icon: '🏆', description: 'Livelli e trofei' },
+    { id: 'leaderboard', label: 'Classifica', icon: '👥', description: 'Top studenti' },
     { id: 'quiz', label: 'Avvia Quiz', icon: '🎯', description: 'Inizia una simulazione' },
     { id: 'review', label: 'Ripasso', icon: '🔄', description: 'Ripassa gli errori' },
     { id: 'statistics', label: 'Statistiche', icon: '📊', description: 'Analisi prestazioni' },
@@ -281,6 +285,28 @@ export default function Dashboard() {
             </Link>
           )}
         </div>
+          </div>
+        )}
+
+        {/* Sezione Progresso (Gamification) */}
+        {activeSection === 'progress' && user && (
+          <div className="space-y-6">
+            <div className="mb-4">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">
+                🏆 Il Tuo Progresso
+              </h2>
+              <p className="text-gray-600 dark:text-dark-text-secondary">
+                Livelli, trofei e statistiche di gamification
+              </p>
+            </div>
+            <GamificationProgress userId={user.id} />
+          </div>
+        )}
+
+        {/* Sezione Classifica */}
+        {activeSection === 'leaderboard' && (
+          <div className="space-y-6">
+            <Leaderboard />
           </div>
         )}
 

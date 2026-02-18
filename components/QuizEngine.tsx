@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { supabase, Question, saveQuizResult, saveQuizAnswers, getQuestionsByCategory, getWrongAnswers } from '@/lib/supabase'
+import { supabase, Question, saveQuizResult, saveQuizAnswers, getQuestionsByCategory, getWrongAnswers, checkAndUnlockAchievements } from '@/lib/supabase'
+import { useWakeLock } from '@/hooks/useWakeLock'
 
 interface QuizEngineProps {
   plan?: 'free' | 'premium'
@@ -31,6 +32,9 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
   const [timeRemaining, setTimeRemaining] = useState(0)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const timeRemainingRef = useRef(0)
+  
+  // Wake Lock per mantenere schermo attivo
+  const { isSupported: wakeLockSupported, isLocked, request: requestWakeLock, release: releaseWakeLock } = useWakeLock()
 
   const isFree = plan === 'free'
   const totalQuestions = mode === 'review' ? questions.length : (isFree ? 10 : 20)
@@ -39,6 +43,19 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
   useEffect(() => {
     loadQuestions()
   }, [plan, category, mode])
+
+  // Wake Lock: attiva quando quiz inizia, rilascia quando finisce
+  useEffect(() => {
+    if (!loading && !quizFinished && questions.length > 0 && wakeLockSupported) {
+      requestWakeLock();
+    }
+
+    return () => {
+      if (quizFinished || loading) {
+        releaseWakeLock();
+      }
+    };
+  }, [loading, quizFinished, questions.length, wakeLockSupported]);
 
   // Timer countdown ottimizzato per ridurre re-render
   useEffect(() => {
@@ -171,6 +188,9 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
   async function finishQuiz() {
     setQuizFinished(true)
     
+    // Rilascia Wake Lock
+    releaseWakeLock()
+    
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -198,6 +218,9 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
         }))
         await saveQuizAnswers(quizResultId, answersToSave)
       }
+
+      // Check e sblocca achievement se necessario
+      await checkAndUnlockAchievements(user.id)
     } catch (error) {
       console.error('Errore nel salvataggio risultati:', error)
     }
