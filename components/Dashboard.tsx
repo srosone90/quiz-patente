@@ -7,12 +7,14 @@ import { useRouter } from 'next/navigation'
 import CategorySelector from './CategorySelector'
 import ReviewMode from './ReviewMode'
 import StatisticsChart from './StatisticsChart'
+import DashboardMenu from './DashboardMenu'
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [quizHistory, setQuizHistory] = useState<QuizResult[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeSection, setActiveSection] = useState('overview')
   const router = useRouter()
 
   useEffect(() => {
@@ -79,17 +81,25 @@ export default function Dashboard() {
 
   const isPremium = profile?.subscription_type !== 'free'
 
+  const menuItems = [
+    { id: 'overview', label: 'Panoramica', icon: '🏠', description: 'Informazioni generali' },
+    { id: 'quiz', label: 'Avvia Quiz', icon: '🎯', description: 'Inizia una simulazione' },
+    { id: 'review', label: 'Ripasso', icon: '🔄', description: 'Ripassa gli errori' },
+    { id: 'statistics', label: 'Statistiche', icon: '📊', description: 'Analisi prestazioni' },
+    { id: 'history', label: 'Storico', icon: '📝', description: 'Quiz completati' }
+  ]
+
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
+      <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
         
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-400 dark:to-primary-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-400 dark:to-primary-600 bg-clip-text text-transparent mb-2">
               Quiz Taxi/NCC
             </h1>
-            <p className="text-lg text-gray-600 dark:text-dark-text-secondary">
+            <p className="text-base sm:text-lg text-gray-600 dark:text-dark-text-secondary">
               Ciao, <span className="font-semibold text-gray-900 dark:text-dark-text-primary">
                 {user?.user_metadata?.full_name || user?.email?.split('@')[0]}
               </span>! 👋
@@ -97,7 +107,7 @@ export default function Dashboard() {
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover rounded-xl transition-all"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover rounded-xl transition-all text-sm sm:text-base"
           >
             <span className="hidden sm:inline">Esci</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,7 +116,17 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Subscription Card */}
+        {/* Dashboard Menu */}
+        <DashboardMenu 
+          items={menuItems}
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+        />
+
+        {/* Sezione Panoramica */}
+        {activeSection === 'overview' && (
+          <div className="space-y-6">
+            {/* Subscription Card */}
         <div className="card p-6 sm:p-8 animate-slide-up">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary">
@@ -261,21 +281,94 @@ export default function Dashboard() {
             </Link>
           )}
         </div>
+          </div>
+        )}
 
-        {/* Category Selector */}
-        <CategorySelector isPremium={isPremium} />
+        {/* Sezione Avvia Quiz */}
+        {activeSection === 'quiz' && (
+          <div className="space-y-6">
+            <div className="card p-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-4">
+                🎯 Avvia Nuova Simulazione
+              </h2>
+              <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
+                Scegli come vuoi esercitarti: quiz completo o per categoria specifica
+              </p>
+              
+              <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                <Link
+                  href={`/quiz?plan=${isPremium ? 'premium' : 'free'}`}
+                  className="group card-hover p-6 flex flex-col items-center text-center bg-gradient-to-br from-primary-600 to-primary-700 text-white border-none"
+                >
+                  <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">📝</div>
+                  <h3 className="text-xl font-bold mb-2">
+                    Quiz Completo
+                  </h3>
+                  <p className="text-primary-100 text-sm">
+                    {isPremium ? '20 domande • 30 minuti' : '10 domande • 10 minuti'}
+                  </p>
+                </Link>
 
-        {/* Review Mode */}
-        <ReviewMode isPremium={isPremium} />
+                {!isPremium ? (
+                  <Link
+                    href="/pricing"
+                    className="group card-hover p-6 flex flex-col items-center text-center border-2 border-dashed border-gray-300 dark:border-gray-600"
+                  >
+                    <div className="text-4xl mb-3">🔒</div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                      Quiz per Categoria
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">
+                      Solo Premium
+                    </p>
+                  </Link>
+                ) : (
+                  <div className="card p-4">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Seleziona Categoria</h4>
+                    <CategorySelector isPremium={true} />
+                  </div>
+                )}
+              </div>
 
-        {/* Statistics */}
-        <StatisticsChart plan={profile?.subscription_type || 'free'} />
+              {!isPremium && (
+                <div className="bg-gradient-to-r from-primary-50 to-accent-50 dark:from-primary-900/20 dark:to-accent-900/20 rounded-xl p-4 border border-primary-200 dark:border-primary-800">
+                  <p className="text-sm text-primary-800 dark:text-primary-200">
+                    💡 <strong>Suggerimento:</strong> Con il piano Premium puoi allenarti su categorie specifiche per migliorare le tue aree deboli!
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-        {/* Quiz History */}
-        <div className="card p-6 sm:p-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-6">
-            Storico Simulazioni
-          </h2>
+        {/* Sezione Ripasso */}
+        {activeSection === 'review' && (
+          <div className="space-y-6">
+            <div className="card p-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-4">
+                🔄 Ripassa gli Errori
+              </h2>
+              <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
+                Rivedi le domande a cui hai risposto in modo errato per migliorare la tua preparazione
+              </p>
+            </div>
+            <ReviewMode isPremium={isPremium} />
+          </div>
+        )}
+
+        {/* Sezione Statistiche */}
+        {activeSection === 'statistics' && (
+          <div>
+            <StatisticsChart plan={profile?.subscription_type || 'free'} />
+          </div>
+        )}
+
+        {/* Sezione Storico */}
+        {activeSection === 'history' && (
+          <div className="card p-6 sm:p-8">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-6">
+              📝 Storico Simulazioni
+            </h2>
           
           {quizHistory.length === 0 ? (
             <div className="text-center py-12">
@@ -286,12 +379,12 @@ export default function Dashboard() {
               <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
                 Inizia il tuo primo quiz per vedere qui i risultati!
               </p>
-              <Link
-                href={`/quiz?plan=${isPremium ? 'premium' : 'free'}`}
+              <button
+                onClick={() => setActiveSection('quiz')}
                 className="btn-primary inline-block"
               >
                 🎯 Inizia Ora
-              </Link>
+              </button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -331,7 +424,8 @@ export default function Dashboard() {
               })}
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )

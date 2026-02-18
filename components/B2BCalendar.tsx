@@ -55,7 +55,7 @@ export default function B2BCalendar() {
     setLoading(false)
   }
 
-  function openModal(appointment?: any) {
+  function openModal(appointment?: any, selectedDate?: Date) {
     if (appointment) {
       setEditingAppointment(appointment)
       setFormData({
@@ -73,11 +73,21 @@ export default function B2BCalendar() {
       })
     } else {
       setEditingAppointment(null)
+      
+      // Se è fornita una data, imposta l'appuntamento per quella data alle 9:00
+      let defaultDate = ''
+      if (selectedDate) {
+        const year = selectedDate.getFullYear()
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
+        const day = String(selectedDate.getDate()).padStart(2, '0')
+        defaultDate = `${year}-${month}-${day}T09:00`
+      }
+      
       setFormData({
         client_id: '',
         title: '',
         appointment_type: 'meeting',
-        appointment_date: '',
+        appointment_date: defaultDate,
         duration_minutes: 60,
         location_type: 'videocall',
         status: 'scheduled'
@@ -289,8 +299,9 @@ export default function B2BCalendar() {
                 return (
                   <div
                     key={index}
+                    onClick={() => day && openModal(undefined, day)}
                     className={`bg-white dark:bg-gray-900 min-h-[120px] p-2 
-                              ${!day ? 'bg-gray-50 dark:bg-gray-800' : ''}
+                              ${!day ? 'bg-gray-50 dark:bg-gray-800' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'}
                               ${isToday ? 'ring-2 ring-indigo-500' : ''}`}
                   >
                     {day && (
@@ -303,7 +314,10 @@ export default function B2BCalendar() {
                           {dayAppointments.map((apt) => (
                             <button
                               key={apt.id}
-                              onClick={() => openViewModal(apt)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openViewModal(apt)
+                              }}
                               className={`w-full text-left px-2 py-1 rounded text-xs text-white 
                                         ${typeColors[apt.appointment_type]} hover:opacity-80 transition-opacity`}
                             >
