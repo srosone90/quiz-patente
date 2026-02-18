@@ -381,6 +381,39 @@ export async function getAllAccessCodes() {
 
 // Disattiva codice (admin)
 export async function deactivateAccessCode(codeId: number) {
+  // Prima trova tutti gli utenti che hanno riscattato questo codice
+  const { data: redemptions, error: redemptionsError } = await supabase
+    .from('code_redemptions')
+    .select('user_id')
+    .eq('code_id', codeId)
+
+  if (redemptionsError) {
+    console.error('Error getting redemptions:', redemptionsError)
+    return { data: null, error: redemptionsError }
+  }
+
+  // Invalida le subscription di tutti gli utenti che hanno riscattato il codice
+  if (redemptions && redemptions.length > 0) {
+    const userIds = redemptions.map(r => r.user_id)
+    
+    const { error: updateError } = await supabase
+      .from('user_profiles')
+      .update({
+        subscription_type: 'free',
+        subscription_expires_at: null,
+        updated_at: new Date().toISOString()
+      })
+      .in('id', userIds)
+
+    if (updateError) {
+      console.error('Error invalidating subscriptions:', updateError)
+      return { data: null, error: updateError }
+    }
+
+    console.log(`Invalidated subscriptions for ${userIds.length} users`)
+  }
+
+  // Infine disattiva il codice
   const { data, error } = await supabase
     .from('access_codes')
     .update({ is_active: false })
