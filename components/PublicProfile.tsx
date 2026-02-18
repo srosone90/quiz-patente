@@ -15,21 +15,39 @@ interface Profile {
   achievements_count: number;
 }
 
+// Preset avatars that users can choose from
+const PRESET_AVATARS = [
+  '🚗', '🏍️', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓',
+  '👨‍💼', '👩‍💼', '👨‍🎓', '👩‍🎓', '🧑‍💻', '👨‍🏫', '👩‍🏫', '🧑‍🚀',
+  '⭐', '🌟', '💫', '✨', '🔥', '💎', '🏆', '🎯',
+  '🎓', '📚', '✅', '🚦', '🛣️', '🗺️', '📍', '🎪'
+];
+
 export default function PublicProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     username: '',
     bio: '',
+    avatar_url: '🚗',
     is_public: false,
   });
   const [profileUrl, setProfileUrl] = useState('');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    loadProfile();
+    initUser();
   }, []);
+
+  async function initUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUserId(user.id);
+      loadProfile();
+    }
+  }
 
   async function loadProfile() {
     setIsLoading(true);
@@ -59,7 +77,9 @@ export default function PublicProfile() {
     if (profileData) {
       const fullProfile: Profile = {
         ...profileData,
+        user_id: user.id,
         username: profileData.display_name || '',
+        avatar_url: profileData.avatar_url || '🚗',
         total_xp: progressData?.total_xp || 0,
         level: progressData?.level || 1,
         achievements_count: count || 0,
@@ -68,6 +88,7 @@ export default function PublicProfile() {
       setEditForm({
         username: profileData.display_name || '',
         bio: profileData.bio || '',
+        avatar_url: profileData.avatar_url || '🚗',
         is_public: profileData.is_public || false,
       });
       
@@ -80,26 +101,36 @@ export default function PublicProfile() {
   }
 
   async function saveProfile() {
-    if (!profile) return;
+    if (!currentUserId) return;
 
     const { error } = await supabase
       .from('user_profiles')
-      .update({
+      .upsert({
+        id: currentUserId,
         display_name: editForm.username,
         bio: editForm.bio,
+        avatar_url: editForm.avatar_url,
         is_public: editForm.is_public,
-      })
-      .eq('id', profile.user_id);
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
 
-    if (!error) {
+    if (error) {
+      console.error('Error saving profile:', error);
+      alert('Errore nel salvataggio del profilo');
+      return;
+    }
+
+    // Update local state
+    if (profile) {
       setProfile({
         ...profile,
         username: editForm.username,
         bio: editForm.bio,
+        avatar_url: editForm.avatar_url,
         is_public: editForm.is_public,
       });
-      setIsEditing(false);
     }
+    setIsEditing(false);
   }
 
   function cancelEdit() {
@@ -107,6 +138,7 @@ export default function PublicProfile() {
       setEditForm({
         username: profile.username,
         bio: profile.bio,
+        avatar_url: profile.avatar_url,
         is_public: profile.is_public,
       });
     }
@@ -166,8 +198,8 @@ export default function PublicProfile() {
         <div className="relative -mt-16 mb-4">
           <div className="w-32 h-32 rounded-full bg-white dark:bg-gray-800 p-2 shadow-xl">
             <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <span className="text-4xl font-bold text-white">
-                {profile.username?.[0]?.toUpperCase() || '?'}
+              <span className="text-6xl">
+                {profile.avatar_url || '🚗'}
               </span>
             </div>
           </div>
@@ -182,6 +214,27 @@ export default function PublicProfile() {
         {isEditing ? (
           /* Edit Mode */
           <div className="space-y-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Scegli Avatar
+              </label>
+              <div className="grid grid-cols-8 gap-2 mb-4">
+                {PRESET_AVATARS.map((avatar) => (
+                  <button
+                    key={avatar}
+                    type="button"
+                    onClick={() => setEditForm({ ...editForm, avatar_url: avatar })}
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-2xl transition-all ${
+                      editForm.avatar_url === avatar
+                        ? 'bg-blue-500 scale-110 ring-2 ring-blue-600'
+                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    {avatar}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Username
