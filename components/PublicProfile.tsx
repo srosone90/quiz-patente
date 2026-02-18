@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User, Share2, Eye, EyeOff, Edit2, Save, X, Award, TrendingUp } from 'lucide-react';
+import { User, Share2, Eye, EyeOff, Edit2, Save, X, Award, TrendingUp, Facebook, Instagram, MessageCircle, Twitter, Linkedin, Copy } from 'lucide-react';
 
 interface Profile {
   user_id: string;
@@ -145,27 +145,40 @@ export default function PublicProfile() {
     setIsEditing(false);
   }
 
-  async function shareProfile() {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Profilo di ${profile?.username} - Quiz Patente`,
-          text: `Guarda il mio profilo su Quiz Patente! Livello ${profile?.level} con ${profile?.total_xp} XP`,
-          url: profileUrl,
-        });
-      } catch (err) {
-        // User cancelled or error
-        copyToClipboard();
-      }
-    } else {
-      copyToClipboard();
-    }
-  }
-
   function copyToClipboard() {
     navigator.clipboard.writeText(profileUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function shareOnFacebook() {
+    const text = `Guarda il mio profilo su Quiz Patente! \nLivello ${profile?.level} 🏆 | ${profile?.total_xp} XP ⭐`;
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(profileUrl)}&quote=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'width=600,height=400');
+  }
+
+  function shareOnWhatsApp() {
+    const text = `🚗 Guarda il mio profilo su Quiz Patente!\n\n👤 ${profile?.username}\n🏆 Livello ${profile?.level}\n⭐ ${profile?.total_xp} XP\n🏅 ${profile?.achievements_count} Achievement\n\n${profileUrl}`;
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  }
+
+  function shareOnTwitter() {
+    const text = `🚗 Guarda i miei progressi su Quiz Patente!\n🏆 Livello ${profile?.level} | ⭐ ${profile?.total_xp} XP`;
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(profileUrl)}`;
+    window.open(url, '_blank', 'width=600,height=400');
+  }
+
+  function shareOnLinkedIn() {
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(profileUrl)}`;
+    window.open(url, '_blank', 'width=600,height=400');
+  }
+
+  function shareOnInstagram() {
+    // Instagram non supporta condivisione diretta via URL
+    // Copia il link e suggerisce di postarlo manualmente
+    copyToClipboard();
+    alert('📱 Link copiato!\n\nApri Instagram e incollalo nella tua Story o Bio.\n\nSu mobile puoi anche screenshottare il tuo profilo e postarlo!');
   }
 
   if (isLoading) {
@@ -346,26 +359,76 @@ export default function PublicProfile() {
             <div className="flex items-center gap-2 mb-3">
               <Share2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <h3 className="font-semibold text-gray-900 dark:text-white">
-                Condividi il tuo profilo
+                Condividi su
               </h3>
             </div>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={profileUrl}
-                readOnly
-                className="flex-1 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300"
-              />
+            
+            {/* Social Buttons Grid */}
+            <div className="grid grid-cols-3 gap-2 mb-3">
               <button
-                onClick={shareProfile}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                onClick={shareOnFacebook}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1877F2] text-white rounded-lg hover:bg-[#166FE5] transition-colors"
+                title="Condividi su Facebook"
               >
-                {copied ? '✓ Copiato!' : 'Condividi'}
+                <Facebook className="w-5 h-5" />
+                <span className="text-sm font-medium">Facebook</span>
+              </button>
+              
+              <button
+                onClick={shareOnInstagram}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 text-white rounded-lg hover:opacity-90 transition-opacity"
+                title="Condividi su Instagram"
+              >
+                <Instagram className="w-5 h-5" />
+                <span className="text-sm font-medium">Instagram</span>
+              </button>
+              
+              <button
+                onClick={shareOnWhatsApp}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] text-white rounded-lg hover:bg-[#20BD5A] transition-colors"
+                title="Condividi su WhatsApp"
+              >
+                <MessageCircle className="w-5 h-5" />
+                <span className="text-sm font-medium">WhatsApp</span>
               </button>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-              Gli altri utenti potranno vedere i tuoi progressi e achievement
-            </p>
+            
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <button
+                onClick={shareOnTwitter}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1DA1F2] text-white rounded-lg hover:bg-[#1A94DA] transition-colors"
+                title="Condividi su Twitter"
+              >
+                <Twitter className="w-5 h-5" />
+                <span className="text-sm font-medium">Twitter</span>
+              </button>
+              
+              <button
+                onClick={shareOnLinkedIn}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-[#0A66C2] text-white rounded-lg hover:bg-[#095196] transition-colors"
+                title="Condividi su LinkedIn"
+              >
+                <Linkedin className="w-5 h-5" />
+                <span className="text-sm font-medium">LinkedIn</span>
+              </button>
+              
+              <button
+                onClick={copyToClipboard}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
+                title="Copia link"
+              >
+                <Copy className="w-5 h-5" />
+                <span className="text-sm font-medium">{copied ? '✓ Copiato' : 'Copia'}</span>
+              </button>
+            </div>
+            
+            {/* URL Display */}
+            <input
+              type="text"
+              value={profileUrl}
+              readOnly
+              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-xs text-gray-600 dark:text-gray-400 text-center"
+            />
           </div>
         )}
 
