@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { supabase, Question, saveQuizResult, saveQuizAnswers, getQuestionsByCategory, getWrongAnswers } from '@/lib/supabase'
 
 interface QuizEngineProps {
@@ -29,6 +29,8 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
   const [loading, setLoading] = useState(true)
   const [canProceed, setCanProceed] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(0)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const timeRemainingRef = useRef(0)
 
   const isFree = plan === 'free'
   const totalQuestions = mode === 'review' ? questions.length : (isFree ? 10 : 20)
@@ -38,28 +40,39 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
     loadQuestions()
   }, [plan, category, mode])
 
-  // Timer countdown
+  // Timer countdown ottimizzato per ridurre re-render
   useEffect(() => {
     if (loading || quizFinished || questions.length === 0) return
 
     // Initialize timer when questions are loaded
-    if (timeRemaining === 0) {
+    if (timeRemainingRef.current === 0) {
+      timeRemainingRef.current = timeLimit
       setTimeRemaining(timeLimit)
     }
 
-    const timer = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          finishQuiz()
-          return 0
-        }
-        return prev - 1
-      })
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+    }
+
+    // Update display every second but minimize re-renders
+    timerRef.current = setInterval(() => {
+      timeRemainingRef.current -= 1
+      
+      if (timeRemainingRef.current <= 0) {
+        if (timerRef.current) clearInterval(timerRef.current)
+        finishQuiz()
+        setTimeRemaining(0)
+      } else {
+        // Only update state (trigger re-render) every 1 second
+        setTimeRemaining(timeRemainingRef.current)
+      }
     }, 1000)
 
-    return () => clearInterval(timer)
-  }, [loading, quizFinished, questions.length, timeRemaining])
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [loading, quizFinished, questions.length, timeLimit])
 
   async function loadQuestions() {
     try {
@@ -310,30 +323,31 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
   const timeWarning = timeRemaining <= 60 // Last minute warning
 
   return (
-    <div className="max-w-4xl mx-auto px-4 animate-fadeIn">
+    <div className="max-w-4xl mx-auto px-2 sm:px-4 animate-fadeIn">
       {/* Header con progresso */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 dark:from-accent-400 dark:to-accent-600 rounded-xl flex items-center justify-center">
-              <span className="text-white text-xl">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary-500 to-primary-700 dark:from-accent-400 dark:to-accent-600 rounded-xl flex items-center justify-center">
+              <span className="text-white text-lg sm:text-xl">
                 {mode === 'review' ? '🔄' : category ? '📂' : '📝'}
               </span>
             </div>
-            <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+            <span className="text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300">
               {mode === 'review' ? 'Modalità Ripasso' : category ? `Categoria: ${category}` : 'Quiz Completo'}
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            <span className={`text-sm font-bold px-4 py-2 rounded-xl transition-all ${
+          <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto justify-between sm:justify-end">
+            <span className={`text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl transition-all ${
               timeWarning 
                 ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 animate-pulse shadow-lg shadow-red-200 dark:shadow-red-900/30' 
                 : 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
             }`}>
               ⏱️ {formatTime(timeRemaining)}
             </span>
-            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-              Domanda <span className="text-primary-600 dark:text-accent-500">{currentIndex + 1}</span> di {questions.length}
+            <span className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400">
+              <span className="hidden sm:inline">Domanda </span>
+              <span className="text-primary-600 dark:text-accent-500">{currentIndex + 1}</span> / {questions.length}
             </span>
           </div>
         </div>
@@ -346,40 +360,40 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
         </div>
 
         {/* Contatori risposte */}
-        <div className="flex gap-6 mt-6">
-          <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-xl border border-green-200 dark:border-green-700">
-            <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
+        <div className="flex flex-wrap gap-3 sm:gap-6 mt-4 sm:mt-6">
+          <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 sm:px-4 py-2 rounded-xl border border-green-200 dark:border-green-700">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
             </svg>
-            <span className="text-sm font-bold text-green-700 dark:text-green-300">
-              Corrette: {correctCount}
+            <span className="text-xs sm:text-sm font-bold text-green-700 dark:text-green-300">
+              <span className="hidden sm:inline">Corrette: </span>{correctCount}
             </span>
           </div>
-          <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl border border-red-200 dark:border-red-700">
-            <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
+          <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 px-3 sm:px-4 py-2 rounded-xl border border-red-200 dark:border-red-700">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
             </svg>
-            <span className="text-sm font-bold text-red-700 dark:text-red-300">
-              Sbagliate: {incorrectCount}
+            <span className="text-xs sm:text-sm font-bold text-red-700 dark:text-red-300">
+              <span className="hidden sm:inline">Sbagliate: </span>{incorrectCount}
             </span>
           </div>
         </div>
       </div>
 
       {/* Domanda */}
-      <div className="card-hover mb-8">
-        <h2 className="text-2xl font-bold mb-8 text-gray-900 dark:text-white leading-relaxed">
+      <div className="card-hover mb-6 sm:mb-8">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-6 sm:mb-8 text-gray-900 dark:text-white leading-relaxed">
           {currentQuestion.question}
         </h2>
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {answers.map((answer, index) => {
             const letter = String.fromCharCode(65 + index)
             const isSelected = selectedAnswer === answer
             const isCorrect = answer === currentQuestion.correct_answer
             const showCorrection = showResult
 
-            let classes = 'w-full text-left p-5 rounded-xl border-2 transition-all duration-200 font-medium'
+            let classes = 'w-full text-left p-3 sm:p-4 md:p-5 rounded-xl border-2 transition-all duration-200 font-medium text-sm sm:text-base'
             
             if (showCorrection) {
               if (isCorrect) {

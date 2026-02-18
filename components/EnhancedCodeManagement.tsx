@@ -39,7 +39,8 @@ export default function EnhancedCodeManagement() {
     plan_type: 'last_minute' as 'last_minute' | 'senza_pensieri',
     duration_days: 30,
     max_uses: 1,
-    expires_at: ''
+    expires_at: '',
+    quantity: 1 // Numero di codici da generare (PACK)
   })
 
   useEffect(() => {
@@ -118,17 +119,49 @@ export default function EnhancedCodeManagement() {
       return
     }
 
+    const quantity = generateForm.quantity || 1
+    
+    if (quantity < 1 || quantity > 100) {
+      alert('Il numero di codici deve essere tra 1 e 100')
+      return
+    }
+
     setGenerating(true)
     try {
-      const newCode = await generateAccessCode(
-        generateForm.school_name,
-        generateForm.plan_type,
-        generateForm.duration_days,
-        generateForm.max_uses,
-        generateForm.expires_at || undefined
-      )
+      const generatedCodes: string[] = []
       
-      alert(`✅ Codice generato con successo!\n\nCodice: ${newCode}\n\nInvia questo codice alla scuola guida.`)
+      // Genera il numero specificato di codici
+      for (let i = 0; i < quantity; i++) {
+        const newCode = await generateAccessCode(
+          generateForm.school_name,
+          generateForm.plan_type,
+          generateForm.duration_days,
+          generateForm.max_uses,
+          generateForm.expires_at || undefined
+        )
+        generatedCodes.push(newCode)
+      }
+      
+      // Mostra i codici generati in formato copiabile
+      const codesText = generatedCodes.join('\n')
+      const message = quantity === 1 
+        ? `✅ Codice generato con successo!\n\nCodice: ${generatedCodes[0]}\n\nInvia questo codice alla scuola guida.`
+        : `✅ ${quantity} codici generati con successo!\n\nCodici:\n${codesText}\n\nCopia tutti i codici e inviali alla scuola guida.`
+      
+      // Crea un textarea nascosto per la copia
+      const textarea = document.createElement('textarea')
+      textarea.value = codesText
+      document.body.appendChild(textarea)
+      textarea.select()
+      
+      try {
+        document.execCommand('copy')
+        alert(message + '\n\n✓ Codici copiati negli appunti!')
+      } catch (err) {
+        alert(message)
+      }
+      
+      document.body.removeChild(textarea)
       
       // Reset form
       setGenerateForm({
@@ -136,14 +169,15 @@ export default function EnhancedCodeManagement() {
         plan_type: 'last_minute',
         duration_days: 30,
         max_uses: 1,
-        expires_at: ''
+        expires_at: '',
+        quantity: 1
       })
       
       setShowGenerateModal(false)
       loadCodes()
     } catch (error: any) {
       console.error('Errore generazione codice:', error)
-      alert(`❌ Errore nella generazione del codice:\n\n${error.message || error}`)
+      alert(`❌ Errore nella generazione dei codici:\n\n${error.message || error}`)
     } finally {
       setGenerating(false)
     }
@@ -580,6 +614,27 @@ export default function EnhancedCodeManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Quantità Codici (PACK) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  max="100"
+                  value={generateForm.quantity}
+                  onChange={(e) => setGenerateForm({ ...generateForm, quantity: parseInt(e.target.value) || 1 })}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                           bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {generateForm.quantity > 1 
+                    ? `🎁 Verranno generati ${generateForm.quantity} codici con le stesse caratteristiche` 
+                    : 'Imposta un numero maggiore di 1 per generare un PACK di codici'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Data Scadenza Codice (opzionale)
                 </label>
                 <input
@@ -594,8 +649,8 @@ export default function EnhancedCodeManagement() {
 
               <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                  <strong>Riepilogo:</strong> Verrà generato un codice {generateForm.plan_type === 'last_minute' ? 'Last Minute' : 'Senza Pensieri'} 
-                  per "{generateForm.school_name || '...'}", valido {generateForm.duration_days} giorni dall'attivazione, 
+                  <strong>Riepilogo:</strong> {generateForm.quantity > 1 ? `Verranno generati ${generateForm.quantity} codici` : 'Verrà generato un codice'} {generateForm.plan_type === 'last_minute' ? 'Last Minute' : 'Senza Pensieri'} 
+                  per "{generateForm.school_name || '...'}", {generateForm.quantity > 1 ? 'ognuno' : ''} valido {generateForm.duration_days} giorni dall'attivazione, 
                   utilizzabile {generateForm.max_uses} {generateForm.max_uses === 1 ? 'volta' : 'volte'}.
                 </p>
               </div>

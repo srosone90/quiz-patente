@@ -203,31 +203,33 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Redeem Code Card */}
-        <div className="card p-6 bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-dark-card dark:via-dark-card dark:to-dark-hover border-purple-200 dark:border-purple-900/30">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-2xl">
-              🎟️
+        {/* Redeem Code Card - Solo per utenti free */}
+        {!isPremium && (
+          <div className="card p-4 sm:p-6 bg-gradient-to-br from-purple-50/50 via-white to-pink-50/50 dark:from-dark-card dark:via-dark-card dark:to-dark-hover border-purple-100 dark:border-purple-900/20">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+              <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl sm:text-2xl">
+                🎟️
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-dark-text-primary mb-1">
+                  Hai un Codice Accesso?
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary">
+                  Attiva il tuo codice per sbloccare l'accesso premium
+                </p>
+              </div>
+              <Link
+                href="/redeem"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl text-sm font-semibold hover:shadow-lg hover:scale-105 transition-all whitespace-nowrap"
+              >
+                Attiva
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
             </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-dark-text-primary mb-1">
-                Hai un Codice Accesso?
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-dark-text-secondary">
-                Attiva il tuo codice della scuola guida per sbloccare l'accesso premium
-              </p>
-            </div>
-            <Link
-              href="/redeem"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all whitespace-nowrap"
-            >
-              Attiva Codice
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
           </div>
-        </div>
+        )}
 
         {/* Action Buttons */}
         <div className="grid sm:grid-cols-2 gap-4">
@@ -244,18 +246,20 @@ export default function Dashboard() {
             </p>
           </Link>
 
-          <Link
-            href="/pricing"
-            className="group card-hover p-8 flex flex-col items-center text-center"
-          >
-            <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">⭐</div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">
-              Piani Premium
-            </h3>
-            <p className="text-gray-600 dark:text-dark-text-secondary">
-              Scopri tutte le opzioni disponibili
-            </p>
-          </Link>
+          {!isPremium && (
+            <Link
+              href="/pricing"
+              className="group card-hover p-8 flex flex-col items-center text-center"
+            >
+              <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">⭐</div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">
+                Piani Premium
+              </h3>
+              <p className="text-gray-600 dark:text-dark-text-secondary">
+                Scopri tutte le opzioni disponibili
+              </p>
+            </Link>
+          )}
         </div>
 
         {/* Category Selector */}

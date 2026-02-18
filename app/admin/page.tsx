@@ -46,6 +46,7 @@ interface User {
   subscription_type: string
   subscription_expires_at: string | null
   created_at: string
+  role?: string
 }
 
 interface QuestionStat {
@@ -377,46 +378,84 @@ export default function AdminDashboard() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Gestione Utenti</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Elenco completo degli utenti registrati</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Elenco completo degli utenti registrati - Totale: {users.length}</p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Email</th>
-                    <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Nome</th>
-                    <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Piano</th>
-                    <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Scadenza</th>
-                    <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Registrato</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {users.map(user => {
-                    const expiresDate = user.subscription_expires_at 
-                      ? new Date(user.subscription_expires_at).toLocaleDateString('it-IT')
-                      : 'N/A'
-                    const createdDate = new Date(user.created_at).toLocaleDateString('it-IT')
-                    
-                    return (
-                      <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-900">
-                        <td className="py-3 px-6 text-sm text-gray-900 dark:text-gray-100">{user.email}</td>
-                        <td className="py-3 px-6 text-sm text-gray-700 dark:text-gray-300">{user.full_name || '-'}</td>
-                        <td className="py-3 px-6 text-sm">
-                          <span className={`px-3 py-1 rounded-md text-xs font-medium ${
-                            user.subscription_type === 'free'
-                              ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                              : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                          }`}>
-                            {user.subscription_type === 'free' ? 'Free' : user.subscription_type}
-                          </span>
-                        </td>
-                        <td className="py-3 px-6 text-sm text-gray-700 dark:text-gray-300">{expiresDate}</td>
-                        <td className="py-3 px-6 text-sm text-gray-700 dark:text-gray-300">{createdDate}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+            {users.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="text-6xl mb-4">👥</div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Nessun utente trovato
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Gli utenti registrati appariranno qui
+                </p>
+                <button
+                  onClick={() => loadAllData()}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Ricarica
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-900">
+                    <tr>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Email</th>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Nome</th>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Piano</th>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Ruolo</th>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Scadenza</th>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Registrato</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {users.map(user => {
+                      const expiresDate = user.subscription_expires_at 
+                        ? new Date(user.subscription_expires_at).toLocaleDateString('it-IT')
+                        : 'N/A'
+                      const createdDate = new Date(user.created_at).toLocaleDateString('it-IT')
+                      const isUserAdmin = user.role === 'admin'
+                      
+                      return (
+                        <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-900">
+                          <td className="py-3 px-6 text-sm text-gray-900 dark:text-gray-100">{user.email || 'N/A'}</td>
+                          <td className="py-3 px-6 text-sm text-gray-700 dark:text-gray-300">{user.full_name || '-'}</td>
+                          <td className="py-3 px-6 text-sm">
+                            <span className={`px-3 py-1 rounded-md text-xs font-medium ${
+                              user.subscription_type === 'free'
+                                ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                            }`}>
+                              {user.subscription_type === 'free' ? 'Free' : user.subscription_type}
+                            </span>
+                          </td>
+                          <td className="py-3 px-6 text-sm">
+                            <span className={`px-3 py-1 rounded-md text-xs font-medium ${
+                              isUserAdmin
+                                ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            }`}>
+                              {isUserAdmin ? '👑 Admin' : 'User'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-6 text-sm text-gray-700 dark:text-gray-300">{expiresDate}</td>
+                          <td className="py-3 px-6 text-sm text-gray-700 dark:text-gray-300">{createdDate}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/20">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>⚠️ Nota:</strong> Per modificare i ruoli degli utenti e gestire i permessi admin, 
+                è necessario accedere direttamente al database di Supabase tramite SQL:
+                <code className="block mt-2 p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded text-xs">
+                  UPDATE user_profiles SET role = 'admin' WHERE email = 'user@example.com';
+                </code>
+              </p>
             </div>
           </div>
         )}

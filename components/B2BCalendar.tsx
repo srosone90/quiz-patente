@@ -16,6 +16,8 @@ export default function B2BCalendar() {
   const [clients, setClients] = useState<B2BClient[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [showViewModal, setShowViewModal] = useState(false)
+  const [viewingAppointment, setViewingAppointment] = useState<any | null>(null)
   const [editingAppointment, setEditingAppointment] = useState<any | null>(null)
   const [currentDate, setCurrentDate] = useState(new Date())
 
@@ -82,6 +84,18 @@ export default function B2BCalendar() {
       })
     }
     setShowModal(true)
+  }
+
+  function openViewModal(appointment: any) {
+    setViewingAppointment(appointment)
+    setShowViewModal(true)
+  }
+
+  function editFromView() {
+    if (viewingAppointment) {
+      setShowViewModal(false)
+      openModal(viewingAppointment)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -289,7 +303,7 @@ export default function B2BCalendar() {
                           {dayAppointments.map((apt) => (
                             <button
                               key={apt.id}
-                              onClick={() => openModal(apt)}
+                              onClick={() => openViewModal(apt)}
                               className={`w-full text-left px-2 py-1 rounded text-xs text-white 
                                         ${typeColors[apt.appointment_type]} hover:opacity-80 transition-opacity`}
                             >
@@ -327,6 +341,139 @@ export default function B2BCalendar() {
           ))}
         </div>
       </div>
+
+      {/* Modal Visualizzazione Appuntamento */}
+      {showViewModal && viewingAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Dettagli Appuntamento
+                </h3>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Titolo</h4>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">{viewingAppointment.title}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Cliente</h4>
+                  <p className="text-gray-900 dark:text-white">{viewingAppointment.b2b_clients?.business_name || 'N/A'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Tipo</h4>
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium text-white ${typeColors[viewingAppointment.appointment_type]}`}>
+                    {typeLabels[viewingAppointment.appointment_type]}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Data e Ora</h4>
+                  <p className="text-gray-900 dark:text-white">
+                    {new Date(viewingAppointment.appointment_date).toLocaleString('it-IT', {
+                      dateStyle: 'full',
+                      timeStyle: 'short'
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Durata</h4>
+                  <p className="text-gray-900 dark:text-white">{viewingAppointment.duration_minutes} minuti</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Modalità</h4>
+                <p className="text-gray-900 dark:text-white">
+                  {viewingAppointment.location_type === 'videocall' && 'Videochiamata'}
+                  {viewingAppointment.location_type === 'phone' && 'Telefono'}
+                  {viewingAppointment.location_type === 'client_office' && 'Sede Cliente'}
+                  {viewingAppointment.location_type === 'our_office' && 'Nostra Sede'}
+                </p>
+              </div>
+
+              {viewingAppointment.location && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Indirizzo</h4>
+                  <p className="text-gray-900 dark:text-white">{viewingAppointment.location}</p>
+                </div>
+              )}
+
+              {viewingAppointment.objective && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Obiettivo</h4>
+                  <p className="text-gray-900 dark:text-white">{viewingAppointment.objective}</p>
+                </div>
+              )}
+
+              {viewingAppointment.pre_notes && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Note di preparazione</h4>
+                  <p className="text-gray-900 dark:text-white whitespace-pre-wrap">{viewingAppointment.pre_notes}</p>
+                </div>
+              )}
+
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Stato</h4>
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                  viewingAppointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                  viewingAppointment.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                  viewingAppointment.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                  'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                }`}>
+                  {viewingAppointment.status === 'scheduled' && 'Pianificato'}
+                  {viewingAppointment.status === 'completed' && 'Completato'}
+                  {viewingAppointment.status === 'cancelled' && 'Annullato'}
+                  {viewingAppointment.status === 'no_show' && 'Non presentato'}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+              <button
+                onClick={() => {
+                  setShowViewModal(false)
+                  if (viewingAppointment) handleDelete(viewingAppointment.id)
+                }}
+                className="px-6 py-2 border border-red-300 dark:border-red-600 rounded-lg
+                         text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900"
+              >
+                Elimina
+              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                           text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  Chiudi
+                </button>
+                <button
+                  onClick={editFromView}
+                  className="btn-primary"
+                >
+                  Modifica
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Crea/Modifica */}
       {showModal && (

@@ -194,19 +194,35 @@ export async function saveQuizAnswers(
 }
 
 // Ottieni domande sbagliate per "Ripassa Errori"
+// Solo l'ultima risposta per ogni domanda - se l'ultima è corretta, la domanda non compare
 export async function getWrongAnswers(limit: number = 50) {
   const user = await getCurrentUser()
   if (!user) return { data: [], error: null }
 
-  const { data, error } = await supabase
+  // Ottieni tutte le risposte dell'utente ordinate per data
+  const { data: allAnswers, error } = await supabase
     .from('quiz_answers')
     .select('*')
     .eq('user_id', user.id)
-    .eq('is_correct', false)
     .order('answered_at', { ascending: false })
-    .limit(limit)
 
-  return { data, error }
+  if (error) return { data: [], error }
+  if (!allAnswers) return { data: [], error: null }
+
+  // Raggruppa per question_id e prendi solo l'ultima risposta
+  const latestAnswersMap = new Map()
+  allAnswers.forEach(answer => {
+    if (!latestAnswersMap.has(answer.question_id)) {
+      latestAnswersMap.set(answer.question_id, answer)
+    }
+  })
+
+  // Filtra solo quelle sbagliate e limita il numero
+  const wrongAnswers = Array.from(latestAnswersMap.values())
+    .filter(answer => !answer.is_correct)
+    .slice(0, limit)
+
+  return { data: wrongAnswers, error: null }
 }
 
 // Ottieni domande per categoria
