@@ -17,7 +17,7 @@ export default function PricingPage() {
         'Aggiornamenti inclusi',
       ],
       highlight: false,
-      link: process.env.NEXT_PUBLIC_STRIPE_LAST_MINUTE_LINK || 'https://buy.stripe.com/test_eVq5kD9xB9eXfco1Kx5wI01',
+      link: process.env.NEXT_PUBLIC_STRIPE_LAST_MINUTE_LINK || 'https://buy.stripe.com/3cI9AU06s3CneIF6Gl2kw01',
       badge: 'Ideale per ripasso rapido',
     },
     {
@@ -37,7 +37,7 @@ export default function PricingPage() {
         'Supporto prioritario',
       ],
       highlight: true,
-      link: process.env.NEXT_PUBLIC_STRIPE_SENZA_PENSIERI_LINK || 'https://buy.stripe.com/test_4gM3cvfVZ62L4xKcpb5wI02',
+      link: process.env.NEXT_PUBLIC_STRIPE_SENZA_PENSIERI_LINK || 'https://buy.stripe.com/4gM4gA1aw3Cn2ZXfcR2kw00',
       badge: 'PIÙ SCELTO',
     },
   ]
