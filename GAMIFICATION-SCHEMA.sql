@@ -126,6 +126,27 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 -- Aggiungi colonne a user_profiles se non esistono (per DB esistenti)
 DO $$ 
 BEGIN
+  -- Aggiungi user_id se non esiste
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='user_id') THEN
+    ALTER TABLE user_profiles ADD COLUMN user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+    -- Rendi unique se possibile (ignora errore se ci sono duplicati)
+    BEGIN
+      ALTER TABLE user_profiles ADD CONSTRAINT user_profiles_user_id_key UNIQUE (user_id);
+    EXCEPTION WHEN OTHERS THEN
+      NULL; -- Ignora se constraint fallisce
+    END;
+  END IF;
+  
+  -- Aggiungi altre colonne
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='display_name') THEN
+    ALTER TABLE user_profiles ADD COLUMN display_name VARCHAR(50);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='bio') THEN
+    ALTER TABLE user_profiles ADD COLUMN bio TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='avatar_url') THEN
+    ALTER TABLE user_profiles ADD COLUMN avatar_url TEXT;
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='is_public') THEN
     ALTER TABLE user_profiles ADD COLUMN is_public BOOLEAN DEFAULT false;
   END IF;
