@@ -275,6 +275,20 @@ ALTER TABLE question_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE exam_settings ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies to avoid conflicts
+DROP POLICY IF EXISTS "Users can view own progress" ON user_progress;
+DROP POLICY IF EXISTS "Public leaderboard readable" ON user_progress;
+DROP POLICY IF EXISTS "Users can view own achievements" ON user_achievements;
+DROP POLICY IF EXISTS "Public profiles readable" ON user_profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Public groups readable" ON study_groups;
+DROP POLICY IF EXISTS "Members can read groups" ON study_groups;
+DROP POLICY IF EXISTS "Comments readable" ON question_comments;
+DROP POLICY IF EXISTS "Authenticated can comment" ON question_comments;
+DROP POLICY IF EXISTS "Users can update own comments" ON question_comments;
+DROP POLICY IF EXISTS "Users manage own exam settings" ON exam_settings;
+
 -- User progress: users can read their own, public leaderboard can read top 100
 CREATE POLICY "Users can view own progress" ON user_progress FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Public leaderboard readable" ON user_progress FOR SELECT USING (true);
@@ -283,20 +297,20 @@ CREATE POLICY "Public leaderboard readable" ON user_progress FOR SELECT USING (t
 CREATE POLICY "Users can view own achievements" ON user_achievements FOR SELECT USING (auth.uid() = user_id);
 
 -- Profiles: public profiles readable by all, own profile editable
-CREATE POLICY "Public profiles readable" ON user_profiles FOR SELECT USING (is_public = true OR auth.uid() = user_id);
-CREATE POLICY "Users can update own profile" ON user_profiles FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own profile" ON user_profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Public profiles readable" ON user_profiles FOR SELECT USING (user_profiles.is_public = true OR auth.uid() = user_profiles.user_id);
+CREATE POLICY "Users can update own profile" ON user_profiles FOR UPDATE USING (auth.uid() = user_profiles.user_id);
+CREATE POLICY "Users can insert own profile" ON user_profiles FOR INSERT WITH CHECK (auth.uid() = user_profiles.user_id);
 
 -- Study groups: public groups readable, members can read private groups
-CREATE POLICY "Public groups readable" ON study_groups FOR SELECT USING (is_public = true);
+CREATE POLICY "Public groups readable" ON study_groups FOR SELECT USING (study_groups.is_public = true);
 CREATE POLICY "Members can read groups" ON study_groups FOR SELECT USING (
   EXISTS (SELECT 1 FROM study_group_members WHERE group_id = study_groups.id AND user_id = auth.uid())
 );
 
 -- Comments: all readable, authenticated can insert
 CREATE POLICY "Comments readable" ON question_comments FOR SELECT USING (true);
-CREATE POLICY "Authenticated can comment" ON question_comments FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own comments" ON question_comments FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Authenticated can comment" ON question_comments FOR INSERT WITH CHECK (auth.uid() = question_comments.user_id);
+CREATE POLICY "Users can update own comments" ON question_comments FOR UPDATE USING (auth.uid() = question_comments.user_id);
 
 -- Exam settings: users manage their own
-CREATE POLICY "Users manage own exam settings" ON exam_settings FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users manage own exam settings" ON exam_settings FOR ALL USING (auth.uid() = exam_settings.user_id);
