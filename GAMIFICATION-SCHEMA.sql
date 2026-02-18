@@ -123,6 +123,20 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Aggiungi colonne a user_profiles se non esistono (per DB esistenti)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='is_public') THEN
+    ALTER TABLE user_profiles ADD COLUMN is_public BOOLEAN DEFAULT false;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='show_stats') THEN
+    ALTER TABLE user_profiles ADD COLUMN show_stats BOOLEAN DEFAULT true;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_profiles' AND column_name='show_achievements') THEN
+    ALTER TABLE user_profiles ADD COLUMN show_achievements BOOLEAN DEFAULT true;
+  END IF;
+END $$;
+
 -- Impostazioni esame (per countdown)
 CREATE TABLE IF NOT EXISTS exam_settings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -217,6 +231,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger: Dopo inserimento risultato quiz
+DROP TRIGGER IF EXISTS after_quiz_result_insert ON quiz_results;
 CREATE TRIGGER after_quiz_result_insert
 AFTER INSERT ON quiz_results
 FOR EACH ROW
@@ -226,13 +241,13 @@ EXECUTE FUNCTION update_user_progress_after_quiz();
 -- INDEXES per performance
 -- ============================================
 
-CREATE INDEX idx_user_progress_user_id ON user_progress(user_id);
-CREATE INDEX idx_user_progress_level ON user_progress(level DESC);
-CREATE INDEX idx_user_progress_xp ON user_progress(total_xp DESC);
-CREATE INDEX idx_user_achievements_user_id ON user_achievements(user_id);
-CREATE INDEX idx_leaderboard_week ON leaderboard_weekly(week_start, rank);
-CREATE INDEX idx_activity_log_user_date ON activity_log(user_id, created_at DESC);
-CREATE INDEX idx_question_comments_question ON question_comments(question_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_progress_user_id ON user_progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_progress_level ON user_progress(level DESC);
+CREATE INDEX IF NOT EXISTS idx_user_progress_xp ON user_progress(total_xp DESC);
+CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id ON user_achievements(user_id);
+CREATE INDEX IF NOT EXISTS idx_leaderboard_week ON leaderboard_weekly(week_start, rank);
+CREATE INDEX IF NOT EXISTS idx_activity_log_user_date ON activity_log(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_question_comments_question ON question_comments(question_id, created_at DESC);
 
 -- ============================================
 -- SEED: Achievement predefiniti
