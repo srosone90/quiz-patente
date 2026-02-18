@@ -7,26 +7,38 @@ import {
   getUserAchievements, 
   getAchievements,
   getXPProgress,
+  supabase,
   type UserProgress, 
   type Achievement,
   type UserAchievement
 } from '@/lib/supabase';
 
-interface GamificationProgressProps {
-  userId: string;
-}
-
-export default function GamificationProgress({ userId }: GamificationProgressProps) {
+export default function GamificationProgress() {
+  const [userId, setUserId] = useState<string | null>(null);
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadGamificationData();
+    getCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (userId) {
+      loadGamificationData();
+    }
   }, [userId]);
 
+  async function getCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setUserId(user.id);
+    }
+  }
+
   const loadGamificationData = async () => {
+    if (!userId) return;
     setLoading(true);
     const [progressData, allAchievements, unlockedAchievements] = await Promise.all([
       getUserProgress(userId),

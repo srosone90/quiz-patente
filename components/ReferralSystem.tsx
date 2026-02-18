@@ -4,10 +4,6 @@ import { useEffect, useState } from 'react';
 import { Share2, Copy, Gift, Users, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-interface ReferralSystemProps {
-  userId: string;
-}
-
 interface ReferralData {
   code: string;
   referrals: Array<{
@@ -19,14 +15,28 @@ interface ReferralData {
   rewardsEarned: number;
 }
 
-export default function ReferralSystem({ userId }: ReferralSystemProps) {
+export default function ReferralSystem() {
   const [referralData, setReferralData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadReferralData();
+    getCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (userId) {
+      loadReferralData();
+    }
   }, [userId]);
+
+  async function getCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setUserId(user.id);
+    }
+  }
 
   const loadReferralData = async () => {
     setLoading(true);
@@ -68,6 +78,7 @@ export default function ReferralSystem({ userId }: ReferralSystemProps) {
   };
 
   const generateReferralCode = (): string => {
+    if (!userId) return 'QUIZDEFAULT';
     return `QUIZ${userId.slice(0, 6).toUpperCase()}`;
   };
 

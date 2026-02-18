@@ -4,17 +4,14 @@ import { useEffect, useState } from 'react';
 import { Calendar, MapPin, Bell, Clock, Edit2, Save, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-interface ExamCountdownProps {
-  userId: string;
-}
-
 interface ExamSettings {
   exam_date: string | null;
   exam_location: string;
   reminder_enabled: boolean;
 }
 
-export default function ExamCountdown({ userId }: ExamCountdownProps) {
+export default function ExamCountdown() {
+  const [userId, setUserId] = useState<string | null>(null);
   const [settings, setSettings] = useState<ExamSettings>({
     exam_date: null,
     exam_location: 'Palermo',
@@ -25,8 +22,21 @@ export default function ExamCountdown({ userId }: ExamCountdownProps) {
   const [countdown, setCountdown] = useState<{days: number, hours: number, minutes: number} | null>(null);
 
   useEffect(() => {
-    loadExamSettings();
+    getCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (userId) {
+      loadExamSettings();
+    }
   }, [userId]);
+
+  async function getCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setUserId(user.id);
+    }
+  }
 
   useEffect(() => {
     if (!settings.exam_date) return;
@@ -55,6 +65,7 @@ export default function ExamCountdown({ userId }: ExamCountdownProps) {
   }, [settings.exam_date]);
 
   const loadExamSettings = async () => {
+    if (!userId) return;
     const { data } = await supabase
       .from('exam_settings')
       .select('*')

@@ -313,7 +313,7 @@ export default function Dashboard() {
                 Livelli, trofei e statistiche di gamification
               </p>
             </div>
-            <GamificationProgress userId={user.id} />
+            <GamificationProgress />
           </div>
         )}
 
