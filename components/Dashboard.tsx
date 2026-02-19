@@ -92,7 +92,7 @@ export default function Dashboard() {
   const isFreeBetaMode = process.env.NEXT_PUBLIC_FREE_BETA_MODE === 'true'
   const isPremium = isFreeBetaMode ? true : profile?.subscription_type !== 'free'
 
-  const menuItems = [
+  const allMenuItems = [
     { id: 'overview', label: 'Panoramica', icon: '🏠', description: 'Informazioni generali' },
     { id: 'progress', label: 'Progresso', icon: '🏆', description: 'Livelli e trofei' },
     { id: 'leaderboard', label: 'Classifica', icon: '👥', description: 'Top studenti' },
@@ -108,6 +108,11 @@ export default function Dashboard() {
     { id: 'history', label: 'Storico', icon: '📝', description: 'Quiz completati' },
     { id: 'language', label: 'Lingua', icon: '🌐', description: 'Cambia lingua' }
   ]
+
+  // 🔵 BETA MODE: Nascondi referral system
+  const menuItems = isFreeBetaMode 
+    ? allMenuItems.filter(item => item.id !== 'referral')
+    : allMenuItems
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
