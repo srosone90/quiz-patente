@@ -17,6 +17,7 @@ import B2BContracts from '@/components/B2BContracts'
 import CRMPipeline from '@/components/CRMPipeline'
 import EnhancedCodeManagement from '@/components/EnhancedCodeManagement'
 import AdvancedAnalytics from '@/components/AdvancedAnalytics'
+import MarketingPlan from '@/components/MarketingPlan'
 
 interface GlobalStats {
   total_users: number
@@ -67,7 +68,7 @@ export default function AdminDashboard() {
   const [codes, setCodes] = useState<AccessCode[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [questionStats, setQuestionStats] = useState<QuestionStat[]>([])
-  const [activeTab, setActiveTab] = useState<'overview' | 'codes' | 'users' | 'questions' | 'b2b_clients' | 'b2b_calendar' | 'b2b_contracts' | 'crm' | 'analytics'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'codes' | 'users' | 'questions' | 'b2b_clients' | 'b2b_calendar' | 'b2b_contracts' | 'crm' | 'analytics' | 'marketing'>('overview')
   
   // Form state per generazione codici
   const [schoolName, setSchoolName] = useState('')
@@ -206,8 +207,7 @@ export default function AdminDashboard() {
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2 border border-gray-200 dark:border-gray-700">
           {[
             { id: 'overview', label: 'Panoramica' },
-            { id: 'analytics', label: '📊 Analytics Avanzata' },
-            { id: 'codes', label: 'Codici Accesso' },
+            { id: 'analytics', label: '📊 Analytics Avanzata' },            { id: 'marketing', label: '🚀 Piano Marketing' },            { id: 'codes', label: 'Codici Accesso' },
             { id: 'users', label: 'Utenti' },
             { id: 'questions', label: 'Statistiche Domande' },
             { id: 'b2b_clients', label: 'Clienti B2B' },
@@ -530,6 +530,9 @@ export default function AdminDashboard() {
             <AdvancedAnalytics />
           </div>
         )}
+
+        {/* Contenuto Tab: Piano Marketing */}
+        {activeTab === 'marketing' && <MarketingPlan />}
       </div>
     </div>
   )
