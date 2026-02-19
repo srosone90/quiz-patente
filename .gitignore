@@ -27,6 +27,7 @@ yarn-error.log*
 # local env files
 .env*.local
 STRIPE-KEYS-PRIVATE.txt
+.FREE-BETA-MODE-RESTORE.md
 
 # vercel
 .vercel

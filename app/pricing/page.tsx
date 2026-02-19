@@ -1,6 +1,34 @@
 import Link from 'next/link'
 
 export default function PricingPage() {
+  // 🔵 MODALITÀ BETA GRATUITA - Nascondi pricing page
+  const isFreeBetaMode = process.env.NEXT_PUBLIC_FREE_BETA_MODE === 'true'
+  
+  if (isFreeBetaMode) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-50 dark:from-dark-bg dark:via-dark-card dark:to-dark-bg flex items-center justify-center px-4">
+        <div className="max-w-2xl mx-auto text-center space-y-6 animate-fade-in">
+          <div className="text-6xl mb-4">🎉</div>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Beta Gratuita Attiva!
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
+            Durante la fase di test, <strong>tutti i contenuti sono completamente gratuiti</strong> per gli aspiranti conducenti di Palermo.
+          </p>
+          <p className="text-lg text-gray-500 dark:text-gray-500">
+            Non sono richiesti pagamenti. Approfitta di questa opportunità per prepararti al meglio! 🚕
+          </p>
+          <Link
+            href="/dashboard"
+            className="inline-block mt-8 px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition"
+          >
+            Torna alla Dashboard
+          </Link>
+        </div>
+      </div>
+    )
+  }
+  
   const plans = [
     {
       name: 'Last Minute',

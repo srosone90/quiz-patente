@@ -88,7 +88,9 @@ export default function Dashboard() {
     )
   }
 
-  const isPremium = profile?.subscription_type !== 'free'
+  // 🔵 MODALITÀ BETA GRATUITA - Tutti hanno accesso premium
+  const isFreeBetaMode = process.env.NEXT_PUBLIC_FREE_BETA_MODE === 'true'
+  const isPremium = isFreeBetaMode ? true : profile?.subscription_type !== 'free'
 
   const menuItems = [
     { id: 'overview', label: 'Panoramica', icon: '🏠', description: 'Informazioni generali' },
@@ -110,6 +112,20 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+        
+        {/* 🔵 BANNER BETA GRATUITA */}
+        {isFreeBetaMode && (
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-xl shadow-lg animate-pulse">
+            <div className="flex items-center justify-center gap-3 text-center">
+              <span className="text-2xl">🎉</span>
+              <div>
+                <p className="font-bold text-lg">Beta Gratuita Attiva!</p>
+                <p className="text-sm opacity-90">Tutti i contenuti premium sono gratuiti durante il test</p>
+              </div>
+              <span className="text-2xl">🚕</span>
+            </div>
+          </div>
+        )}
         
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -217,7 +233,8 @@ export default function Dashboard() {
             </div>
           )}
 
-          {!isPremium && (
+          {/* 🔵 BETA MODE: Nascondi call-to-action premium */}
+          {!isPremium && !isFreeBetaMode && (
             <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 text-white">
               <div className="flex items-start gap-4">
                 <div className="text-4xl">🚀</div>
@@ -241,8 +258,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Redeem Code Card - Solo per utenti free */}
-        {!isPremium && (
+        {/* Redeem Code Card - Solo per utenti free E NON in beta mode */}
+        {!isPremium && !isFreeBetaMode && (
           <div className="card p-4 sm:p-6 bg-gradient-to-br from-purple-50/50 via-white to-pink-50/50 dark:from-dark-card dark:via-dark-card dark:to-dark-hover border-purple-100 dark:border-purple-900/20">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl sm:text-2xl">
@@ -277,14 +294,15 @@ export default function Dashboard() {
           >
             <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🎯</div>
             <h3 className="text-2xl font-bold mb-2">
-              {isPremium ? 'Inizia Quiz Premium' : 'Prova Quiz Demo'}
+              {isFreeBetaMode ? 'Inizia Quiz Gratuito' : (isPremium ? 'Inizia Quiz Premium' : 'Prova Quiz Demo')}
             </h3>
             <p className="text-primary-100">
               {isPremium ? '20 domande • 30 minuti' : '10 domande • 10 minuti'}
             </p>
           </Link>
 
-          {!isPremium && (
+          {/* 🔵 Beta mode: nascondi bottone piani premium */}
+          {!isPremium && !isFreeBetaMode && (
             <Link
               href="/pricing"
               className="group card-hover p-8 flex flex-col items-center text-center"
