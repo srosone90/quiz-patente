@@ -1,10 +1,12 @@
 // Service Worker per PWA - Quiz Taxi/NCC
-const CACHE_NAME = 'quiz-taxi-ncc-v1'
+const CACHE_NAME = 'quiz-taxi-ncc-v2'
 const urlsToCache = [
   '/',
-  '/quiz',
-  '/pricing',
+  '/dashboard',
   '/manifest.json',
+  '/icon-192x192.svg',
+  '/icon-512x512.svg',
+  '/favicon.ico'
 ]
 
 // Installa il service worker e caching delle risorse base

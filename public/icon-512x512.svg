@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#002147" rx="100"/>
+  <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-size="260" fill="#FFD700">🚕</text>
+  <text x="50%" y="75%" dominant-baseline="middle" text-anchor="middle" font-size="64" font-weight="bold" fill="#FFFFFF" font-family="Arial, sans-serif">QUIZ</text>
+  <text x="50%" y="85%" dominant-baseline="middle" text-anchor="middle" font-size="36" fill="#FFD700" font-family="Arial, sans-serif">Taxi/NCC</text>
+</svg>

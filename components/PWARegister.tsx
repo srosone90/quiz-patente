@@ -9,22 +9,41 @@ export default function PWARegister() {
   useEffect(() => {
     // Registra Service Worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('✅ Service Worker registrato:', registration)
-        })
-        .catch((error) => {
-          console.log('❌ Errore registrazione Service Worker:', error)
-        })
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/sw.js', { scope: '/' })
+          .then((registration) => {
+            console.log('✅ Service Worker registrato:', registration.scope)
+            
+            // Controlla aggiornamenti ogni 30 minuti
+            setInterval(() => {
+              registration.update()
+            }, 30 * 60 * 1000)
+          })
+          .catch((error) => {
+            console.log('❌ Errore registrazione Service Worker:', error)
+          })
+      })
     }
 
     // Gestisce l'evento beforeinstallprompt per l'installazione PWA
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('📱 beforeinstallprompt evento ricevuto')
       // Previene il prompt automatico di Chrome
       e.preventDefault()
       // Salva l'evento per usarlo più tardi
       setDeferredPrompt(e)
+      
+      // Controlla se già dismissato di recente
+      const dismissedTime = localStorage.getItem('pwaInstallDismissed')
+      if (dismissedTime) {
+        const daysSinceDismissed = (Date.now() - parseInt(dismissedTime)) / (1000 * 60 * 60 * 24)
+        if (daysSinceDismissed < 7) {
+          console.log('📱 Prompt già dismissato di recente')
+          return
+        }
+      }
+      
       // Mostra il nostro banner di installazione personalizzato
       setShowInstallPrompt(true)
     }
@@ -33,7 +52,13 @@ export default function PWARegister() {
 
     // Verifica se l'app è già installata
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log('✅ App già installata')
+      console.log('✅ App già installata (standalone mode)')
+      setShowInstallPrompt(false)
+    }
+    
+    // iOS Safari verifica
+    if ((window.navigator as any).standalone === true) {
+      console.log('✅ App già installata (iOS standalone)')
       setShowInstallPrompt(false)
     }
 
@@ -44,19 +69,31 @@ export default function PWARegister() {
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
+      console.log('❌ Nessun prompt disponibile')
       return
     }
 
-    // Mostra il prompt di installazione
-    deferredPrompt.prompt()
+    try {
+      // Mostra il prompt di installazione
+      deferredPrompt.prompt()
 
-    // Aspetta la scelta dell'utente
-    const { outcome } = await deferredPrompt.userChoice
-    console.log(`User response to the install prompt: ${outcome}`)
+      // Aspetta la scelta dell'utente
+      const { outcome } = await deferredPrompt.userChoice
+      console.log(`📱 Risposta utente al prompt: ${outcome}`)
 
-    // Reset del prompt
-    setDeferredPrompt(null)
+      if (outcome === 'accepted') {
+        console.log('✅ Utente ha accettato installazione')
+      } else {
+        console.log('❌ Utente ha rifiutato installazione')
+    console.log('📱 Prompt dismissato dall\'utente')
     setShowInstallPrompt(false)
+    // Salva in localStorage per non mostrarlo più per 7 giorni
+      // Reset del prompt
+      setDeferredPrompt(null)
+      setShowInstallPrompt(false)
+    } catch (error) {
+      console.error('❌ Errore durante installazione:', error)
+    }
   }
 
   const handleDismiss = () => {
