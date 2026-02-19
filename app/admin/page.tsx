@@ -16,6 +16,7 @@ import B2BCalendar from '@/components/B2BCalendar'
 import B2BContracts from '@/components/B2BContracts'
 import CRMPipeline from '@/components/CRMPipeline'
 import EnhancedCodeManagement from '@/components/EnhancedCodeManagement'
+import AdvancedAnalytics from '@/components/AdvancedAnalytics'
 
 interface GlobalStats {
   total_users: number
@@ -66,7 +67,7 @@ export default function AdminDashboard() {
   const [codes, setCodes] = useState<AccessCode[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [questionStats, setQuestionStats] = useState<QuestionStat[]>([])
-  const [activeTab, setActiveTab] = useState<'overview' | 'codes' | 'users' | 'questions' | 'b2b_clients' | 'b2b_calendar' | 'b2b_contracts' | 'crm'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'codes' | 'users' | 'questions' | 'b2b_clients' | 'b2b_calendar' | 'b2b_contracts' | 'crm' | 'analytics'>('overview')
   
   // Form state per generazione codici
   const [schoolName, setSchoolName] = useState('')
@@ -205,6 +206,7 @@ export default function AdminDashboard() {
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-2 border border-gray-200 dark:border-gray-700">
           {[
             { id: 'overview', label: 'Panoramica' },
+            { id: 'analytics', label: '📊 Analytics Avanzata' },
             { id: 'codes', label: 'Codici Accesso' },
             { id: 'users', label: 'Utenti' },
             { id: 'questions', label: 'Statistiche Domande' },
@@ -518,6 +520,16 @@ export default function AdminDashboard() {
 
         {/* Contenuto Tab: CRM Pipeline */}
         {activeTab === 'crm' && <CRMPipeline />}
+
+        {/* Contenuto Tab: Analytics Avanzata */}
+        {activeTab === 'analytics' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+              📊 Analytics Avanzata - Tutto il Traffico
+            </h2>
+            <AdvancedAnalytics />
+          </div>
+        )}
       </div>
     </div>
   )

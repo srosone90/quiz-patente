@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { I18nProvider } from '@/contexts/I18nContext'
 import ThemeToggle from '@/components/ThemeToggle'
 import PWARegister from '@/components/PWARegister'
+import GoogleAnalytics from '@/components/GoogleAnalytics'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -41,6 +42,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="it">
+      <head>
+        <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ''} />
+      </head>
       <body className={inter.className}>
         <ThemeProvider>
           <I18nProvider>
