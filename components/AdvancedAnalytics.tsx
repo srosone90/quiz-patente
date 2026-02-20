@@ -114,7 +114,7 @@ export default function AdvancedAnalytics() {
       // Top categories
       const categoryStats: { [key: string]: { count: number; passed: number } } = {}
       quizData?.forEach(q => {
-        const cat = q.category || 'Generale'
+        const cat = 'Generale' // Categoria non disponibile nei dati, usa default
         if (!categoryStats[cat]) {
           categoryStats[cat] = { count: 0, passed: 0 }
         }
