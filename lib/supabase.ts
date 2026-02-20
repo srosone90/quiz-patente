@@ -30,7 +30,7 @@ export interface UserProfile {
   full_name?: string
   subscription_type: 'free' | 'last_minute' | 'senza_pensieri'
   subscription_expires_at?: string
-  is_admin?: boolean
+  role?: string
 }
 
 export interface QuizAnswer {
@@ -287,7 +287,7 @@ export async function isAdmin() {
 
     const { data, error } = await supabase
       .from('user_profiles')
-      .select('is_admin')
+      .select('role')
       .eq('id', user.id)
       .single()
 
@@ -297,7 +297,7 @@ export async function isAdmin() {
     }
 
     console.log('isAdmin: Profile data', data)
-    return data?.is_admin === true
+    return data?.role === 'admin'
   } catch (error) {
     console.error('isAdmin: Exception', error)
     return false
