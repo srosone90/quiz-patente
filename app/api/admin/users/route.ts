@@ -21,21 +21,40 @@ function getSupabaseAdmin() {
 // Verifica che l'utente che fa la richiesta sia admin
 async function verifyAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
-  if (!authHeader) return false
+  if (!authHeader) {
+    console.log('[verifyAdmin] No auth header')
+    return false
+  }
 
   const supabaseAdmin = getSupabaseAdmin()
   const token = authHeader.replace('Bearer ', '')
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   
-  if (error || !user) return false
+  if (error || !user) {
+    console.log('[verifyAdmin] Auth error:', error)
+    return false
+  }
 
-  const { data: profile } = await supabaseAdmin
+  console.log('[verifyAdmin] Checking user:', user.id)
+
+  // Prova prima con id, poi con user_id
+  let profile = await supabaseAdmin
     .from('user_profiles')
-    .select('role')
+    .select('role, id, user_id')
     .eq('id', user.id)
     .single()
 
-  return profile?.role === 'admin'
+  if (!profile.data) {
+    console.log('[verifyAdmin] Try with user_id')
+    profile = await supabaseAdmin
+      .from('user_profiles')
+      .select('role, id, user_id')
+      .eq('user_id', user.id)
+      .single()
+  }
+
+  console.log('[verifyAdmin] Profile found:', profile.data)
+  return profile.data?.role === 'admin'
 }
 
 // PATCH: Modifica utente
@@ -61,19 +80,35 @@ export async function PATCH(request: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin()
 
-    // Aggiorna user_profiles
-    const { data, error } = await supabaseAdmin
+    console.log('[PATCH] Updating user:', userId, 'with', updates)
+
+    // Prova prima con id
+    let result = await supabaseAdmin
       .from('user_profiles')
       .update(updates)
       .eq('id', userId)
       .select()
-      .single()
 
-    if (error) throw error
+    // Se non trova niente, prova con user_id
+    if (!result.data || result.data.length === 0) {
+      console.log('[PATCH] Try with user_id')
+      result = await supabaseAdmin
+        .from('user_profiles')
+        .update(updates)
+        .eq('user_id', userId)
+        .select()
+    }
+
+    if (result.error) throw result.error
+    if (!result.data || result.data.length === 0) {
+      throw new Error('Utente non trovato')
+    }
+
+    console.log('[PATCH] Update successful:', result.data[0])
 
     return NextResponse.json({ 
       success: true, 
-      user: data,
+      user: result.data[0],
       message: 'Utente aggiornato con successo'
     })
 
@@ -109,13 +144,29 @@ export async function DELETE(request: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin()
 
-    // Elimina il profilo (le politiche CASCADE elimineranno anche i dati correlati)
-    const { error: profileError } = await supabaseAdmin
+    console.log('[DELETE] Deleting user:', userId)
+
+    // Prova prima con id
+    let deleteResult = await supabaseAdmin
       .from('user_profiles')
       .delete()
       .eq('id', userId)
+      .select()
 
-    if (profileError) throw profileError
+    // Se non trova niente, prova con user_id
+    if (!deleteResult.data || deleteResult.data.length === 0) {
+      console.log('[DELETE] Try with user_id')
+      deleteResult = await supabaseAdmin
+        .from('user_profiles')
+        .delete()
+        .eq('user_id', userId)
+        .select()
+    }
+
+    if (deleteResult.error) throw deleteResult.error
+    if (!deleteResult.data || deleteResult.data.length === 0) {
+      throw new Error('Utente non trovato')
+    }
 
     // Elimina l'utente dall'autenticazione
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
