@@ -28,9 +28,9 @@ export default function PWARegister() {
     // Controlla localStorage PRIMA di mostrare il banner
     const dismissedTime = localStorage.getItem('pwaInstallDismissed')
     if (dismissedTime) {
-      const daysSinceDismissed = (Date.now() - parseInt(dismissedTime)) / (1000 * 60 * 60 * 24)
-      if (daysSinceDismissed < 30) { // 30 giorni invece di 7
-        console.log(`⏳ Banner PWA nascosto per altri ${Math.ceil(30 - daysSinceDismissed)} giorni`)
+      const minutesSinceDismissed = (Date.now() - parseInt(dismissedTime)) / (1000 * 60)
+      if (minutesSinceDismissed < 30) { // 30 minuti
+        console.log(`⏳ Banner PWA nascosto per altri ${Math.ceil(30 - minutesSinceDismissed)} minuti`)
         return
       }
     }
@@ -71,9 +71,9 @@ export default function PWARegister() {
 
   const handleDismiss = () => {
     setShowInstallPrompt(false)
-    // Salva in localStorage per non mostrarlo più per 30 giorni
+    // Salva in localStorage per non mostrarlo più per 30 minuti
     localStorage.setItem('pwaInstallDismissed', Date.now().toString())
-    console.log('✋ Banner PWA nascosto per 30 giorni')
+    console.log('✋ Banner PWA nascosto per 30 minuti')
   }
 
   if (!showInstallPrompt) {
