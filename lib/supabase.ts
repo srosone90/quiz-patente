@@ -427,10 +427,7 @@ export async function deactivateAccessCode(codeId: number) {
 export async function getAllUsers() {
   const { data, error } = await supabase
     .from('user_profiles')
-    .select(`
-      *,
-      quiz_results(count)
-    `)
+    .select('*')
     .order('created_at', { ascending: false })
 
   return { data, error }
