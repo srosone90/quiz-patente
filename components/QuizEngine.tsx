@@ -126,7 +126,10 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
         // Modalità filtro per categoria (premium only)
         const { data: catQuestions, error: catError } = await getQuestionsByCategory(category, isFree ? 10 : 20)
         if (catError) throw catError
-        fetchedQuestions = catQuestions || []
+        // Shuffle casuale e prendi solo il numero richiesto
+        const allCatQuestions = catQuestions || []
+        const shuffled = allCatQuestions.sort(() => Math.random() - 0.5)
+        fetchedQuestions = shuffled.slice(0, isFree ? 10 : 20)
       } else {
         // Modalità normale: domande random
         const { data, error } = await supabase

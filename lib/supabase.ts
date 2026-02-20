@@ -225,14 +225,12 @@ export async function getWrongAnswers(limit: number = 50) {
   return { data: wrongAnswers, error: null }
 }
 
-// Ottieni domande per categoria
+// Ottieni domande per categoria (tutte, per shuffle casuale)
 export async function getQuestionsByCategory(category: string, limit: number = 20) {
   const { data, error } = await supabase
     .from('questions')
     .select('*')
     .eq('category', category)
-    .order('id')
-    .limit(limit * 3) // Prendi 3x per avere margine per shuffle
 
   return { data, error }
 }
