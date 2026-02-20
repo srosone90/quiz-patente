@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { FileText, BarChart3, Lightbulb, Smartphone } from 'lucide-react'
 
 interface Task {
   id: string
@@ -264,7 +265,10 @@ Cordiali saluti,
       {/* Templates */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">📝 Template Pronti all'Uso</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Template Pronti all'Uso
+          </h3>
           <button
             onClick={() => setShowTemplates(!showTemplates)}
             className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
@@ -322,7 +326,10 @@ Cordiali saluti,
 
       {/* KPI */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">📊 KPI da Monitorare</h3>
+        <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+          <BarChart3 className="w-5 h-5" />
+          KPI da Monitorare
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {kpis.map((kpi, index) => (
             <div key={index} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
@@ -360,11 +367,13 @@ Cordiali saluti,
 
       {/* Footer Info */}
       <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg text-sm text-gray-600 dark:text-gray-400">
-        <p className="mb-2">
-          <strong>💡 Suggerimento:</strong> Inizia con la Fase 1 (Soft Launch) e aspetta di avere almeno 10 utenti attivi prima di passare alla Fase 2.
+        <p className="mb-2 flex items-start gap-2">
+          <Lightbulb className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <span><strong>Suggerimento:</strong> Inizia con la Fase 1 (Soft Launch) e aspetta di avere almeno 10 utenti attivi prima di passare alla Fase 2.</span>
         </p>
-        <p>
-          <strong>📱 Contatto:</strong> Rispondi sempre entro 2 ore a commenti e messaggi per massimizzare conversioni e creare fiducia.
+        <p className="flex items-start gap-2">
+          <Smartphone className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <span><strong>Contatto:</strong> Rispondi sempre entro 2 ore a commenti e messaggi per massimizzare conversioni e creare fiducia.</span>
         </p>
       </div>
     </div>

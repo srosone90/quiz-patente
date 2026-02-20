@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Gift } from 'lucide-react'
 import {
   getAllAccessCodes,
   deleteAccessCode,
@@ -626,10 +627,15 @@ export default function EnhancedCodeManagement() {
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
                            bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  {generateForm.quantity > 1 
-                    ? `🎁 Verranno generati ${generateForm.quantity} codici con le stesse caratteristiche` 
-                    : 'Imposta un numero maggiore di 1 per generare un PACK di codici'}
+                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                  {generateForm.quantity > 1 ? (
+                    <>
+                      <Gift className="w-4 h-4 inline" />
+                      Verranno generati {generateForm.quantity} codici con le stesse caratteristiche
+                    </>
+                  ) : (
+                    'Imposta un numero maggiore di 1 per generare un PACK di codici'
+                  )}
                 </p>
               </div>
 
