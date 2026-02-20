@@ -6,10 +6,15 @@ function getSupabaseAdmin() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   
+  console.log('[getSupabaseAdmin] URL:', supabaseUrl ? 'presente' : 'MANCANTE')
+  console.log('[getSupabaseAdmin] Key:', supabaseKey ? 'presente' : 'MANCANTE')
+  
   if (!supabaseUrl || !supabaseKey) {
+    console.error('[getSupabaseAdmin] Missing env vars!')
     throw new Error('Missing Supabase environment variables')
   }
   
+  console.log('[getSupabaseAdmin] Creating client...')
   return createClient(supabaseUrl, supabaseKey, {
     auth: {
       autoRefreshToken: false,
@@ -59,9 +64,14 @@ async function verifyAdmin(request: NextRequest) {
 
 // PATCH: Modifica utente
 export async function PATCH(request: NextRequest) {
+  console.log('[PATCH] Request received')
   try {
+    console.log('[PATCH] Calling verifyAdmin...')
     const isAdmin = await verifyAdmin(request)
+    console.log('[PATCH] verifyAdmin result:', isAdmin)
+    
     if (!isAdmin) {
+      console.log('[PATCH] Unauthorized - returning 403')
       return NextResponse.json(
         { error: 'Non autorizzato' },
         { status: 403 }
