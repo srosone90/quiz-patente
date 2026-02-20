@@ -115,7 +115,7 @@ export default function Dashboard() {
             onClick={() => {
               setError(null)
               setLoading(true)
-              loadData()
+              loadUserData()
             }}
             className="btn-primary"
           >
