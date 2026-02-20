@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { signIn, signUp } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { Car, Sparkles } from 'lucide-react'
 
 export default function AuthForm() {
   const [isLogin, setIsLogin] = useState(true)
@@ -45,8 +46,12 @@ export default function AuthForm() {
     <div className="min-h-screen flex items-center justify-center px-4 py-12 animate-fade-in">
       <div className="card p-8 w-full max-w-md animate-scale-in">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center text-3xl">
-            {isLogin ? '🚗' : '✨'}
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center">
+            {isLogin ? (
+              <Car className="w-10 h-10 text-white" />
+            ) : (
+              <Sparkles className="w-10 h-10 text-white" />
+            )}
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">
             {isLogin ? 'Bentornato!' : 'Inizia Ora'}

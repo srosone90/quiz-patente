@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Bell, Clock, Edit2, Save, X } from 'lucide-react';
+import { Calendar, MapPin, Bell, Clock, Edit2, Save, X, Target, Clover, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface ExamSettings {
@@ -256,16 +256,19 @@ export default function ExamCountdown() {
 
       {isExamToday && (
         <div className="mt-4 bg-white/30 rounded-lg p-4 backdrop-blur">
-          <p className="font-semibold text-center">
-            🎯 L'esame è OGGI! In bocca al lupo! 🍀
+          <p className="font-semibold text-center flex items-center justify-center gap-2">
+            <Target className="w-5 h-5" />
+            L'esame è OGGI! In bocca al lupo!
+            <Clover className="w-5 h-5" />
           </p>
         </div>
       )}
 
       {isExamSoon && !isExamToday && (
         <div className="mt-4 bg-white/20 rounded-lg p-3 backdrop-blur">
-          <p className="text-sm text-center">
-            ⚠️ L'esame è tra meno di una settimana! Ultimi ripassi!
+          <p className="text-sm text-center flex items-center justify-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            L'esame è tra meno di una settimana! Ultimi ripassi!
           </p>
         </div>
       )}

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getCategories } from '@/lib/supabase'
+import { Lock, Target } from 'lucide-react'
 
 interface CategorySelectorProps {
   isPremium: boolean
@@ -32,7 +33,7 @@ export default function CategorySelector({ isPremium }: CategorySelectorProps) {
       <div className="card p-6 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 dark:from-dark-card dark:via-dark-hover dark:to-dark-surface border-amber-200 dark:border-amber-900/30">
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-2xl shadow-lg">
-            🔒
+            <Lock className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-bold text-gray-900 dark:text-dark-text-primary mb-2">
@@ -85,7 +86,9 @@ export default function CategorySelector({ isPremium }: CategorySelectorProps) {
           className="group p-4 rounded-xl border-2 border-primary-200 dark:border-primary-900/30 bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark-surface dark:to-dark-hover hover:shadow-lg hover:scale-[1.02] transition-all"
         >
           <div className="flex items-center gap-3">
-            <div className="text-3xl group-hover:scale-110 transition-transform">🎯</div>
+            <div className="group-hover:scale-110 transition-transform">
+              <Target className="w-10 h-10 text-primary-600 dark:text-primary-400" />
+            </div>
             <div>
               <div className="font-bold text-primary-900 dark:text-primary-300">Tutte le Categorie</div>
               <div className="text-xs text-primary-700 dark:text-primary-400">Quiz completo casuale</div>

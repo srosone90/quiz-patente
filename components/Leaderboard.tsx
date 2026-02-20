@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Trophy, Medal, TrendingUp } from 'lucide-react';
+import { Trophy, Medal, TrendingUp, Lightbulb } from 'lucide-react';
 import { getWeeklyLeaderboard } from '@/lib/supabase';
 
 interface LeaderboardEntry {
@@ -155,8 +155,9 @@ export default function Leaderboard() {
 
       {/* Bottom Message */}
       <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
-        <p className="text-sm text-purple-900 dark:text-purple-100">
-          💡 <strong>Come salire in classifica:</strong> Completa più quiz, mantieni la streak attiva e sblocca achievement per guadagnare XP bonus!
+        <p className="text-sm text-purple-900 dark:text-purple-100 flex items-start gap-2">
+          <Lightbulb className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <span><strong>Come salire in classifica:</strong> Completa più quiz, mantieni la streak attiva e sblocca achievement per guadagnare XP bonus!</span>
         </p>
       </div>
     </div>

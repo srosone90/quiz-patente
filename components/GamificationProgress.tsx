@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Trophy, Star, Flame, TrendingUp, Award, Lock } from 'lucide-react';
+import { Trophy, Star, Flame, TrendingUp, Award, Lock, PartyPopper } from 'lucide-react';
 import { 
   getUserProgress, 
   getUserAchievements, 
@@ -238,8 +238,9 @@ export default function GamificationProgress() {
           <div className="flex items-center gap-3">
             <Flame className="w-8 h-8 text-orange-500" />
             <div>
-              <div className="font-semibold text-orange-900 dark:text-orange-100">
-                Stai andando alla grande! 🎉
+              <div className="font-semibold text-orange-900 dark:text-orange-100 flex items-center gap-2">
+                Stai andando alla grande!
+                <PartyPopper className="w-5 h-5 text-orange-500" />
               </div>
               <div className="text-sm text-orange-700 dark:text-orange-300">
                 Hai studiato per {progress.current_streak} {progress.current_streak === 1 ? 'giorno' : 'giorni'} consecutivi. 

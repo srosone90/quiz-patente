@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Target, Phone, Mail, MessageSquare, CheckCircle } from 'lucide-react'
 import {
   getCRMPipelineStats,
   getAllB2BClients,
@@ -35,11 +36,11 @@ export default function CRMPipeline() {
   }
 
   const statusConfig = [
-    { key: 'lead', label: 'Lead', color: 'bg-gray-500', icon: '🎯' },
-    { key: 'contacted', label: 'Contattato', color: 'bg-blue-500', icon: '📞' },
-    { key: 'proposal_sent', label: 'Proposta Inviata', color: 'bg-indigo-500', icon: '📧' },
-    { key: 'negotiation', label: 'Trattativa', color: 'bg-purple-500', icon: '💬' },
-    { key: 'active', label: 'Attivo', color: 'bg-green-500', icon: '✅' },
+    { key: 'lead', label: 'Lead', color: 'bg-gray-500', Icon: Target },
+    { key: 'contacted', label: 'Contattato', color: 'bg-blue-500', Icon: Phone },
+    { key: 'proposal_sent', label: 'Proposta Inviata', color: 'bg-indigo-500', Icon: Mail },
+    { key: 'negotiation', label: 'Trattativa', color: 'bg-purple-500', Icon: MessageSquare },
+    { key: 'active', label: 'Attivo', color: 'bg-green-500', Icon: CheckCircle },
   ]
 
   const getClientsByStatus = (status: string) => {
@@ -54,10 +55,10 @@ export default function CRMPipeline() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {statusConfig.map(({ key, label, color, icon }) => (
+        {statusConfig.map(({ key, label, color, Icon }) => (
           <div key={key} className="card">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">{icon}</span>
+              <Icon className="w-7 h-7 text-gray-700 dark:text-gray-300" />
               <span className={`w-3 h-3 rounded-full ${color}`}></span>
             </div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white">

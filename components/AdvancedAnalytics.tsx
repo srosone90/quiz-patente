@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { BarChart3, Users, Target, RotateCcw, Trophy, Medal, Award, Pin } from 'lucide-react'
 
 interface AnalyticsData {
   totalUsers: number
@@ -253,35 +254,44 @@ export default function AdvancedAnalytics() {
 
       {/* Top Categories */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">📊 Top 5 Categorie</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <BarChart3 className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+          Top 5 Categorie
+        </h3>
         <div className="space-y-3">
-          {data.topCategories.map((cat, idx) => (
-            <div key={idx} className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : '📌'}</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{cat.category}</span>
+          {data.topCategories.map((cat, idx) => {
+            const Icon = idx === 0 ? Trophy : idx === 1 ? Medal : idx === 2 ? Award : Pin;
+            return (
+              <div key={idx} className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-6 h-6 text-amber-500" />
+                    <span className="font-medium text-gray-900 dark:text-white">{cat.category}</span>
+                  </div>
+                  <div className="ml-10 mt-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className="bg-green-500 h-2 rounded-full transition-all"
+                      style={{ width: `${cat.avg_success}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="ml-10 mt-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-green-500 h-2 rounded-full transition-all"
-                    style={{ width: `${cat.avg_success}%` }}
-                  ></div>
+                <div className="ml-4 text-right">
+                  <div className="text-sm font-bold text-gray-900 dark:text-white">{Math.round(cat.avg_success)}%</div>
+                  <div className="text-xs text-gray-500">{cat.count} quiz</div>
                 </div>
               </div>
-              <div className="ml-4 text-right">
-                <div className="text-sm font-bold text-gray-900 dark:text-white">{Math.round(cat.avg_success)}%</div>
-                <div className="text-xs text-gray-500">{cat.count} quiz</div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       {/* Charts placeholder */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">👥 Crescita Utenti</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+            Crescita Utenti
+          </h3>
           <div className="text-sm text-gray-500">
             {data.userGrowth.length > 0 ? (
               <div className="space-y-1">
@@ -299,7 +309,10 @@ export default function AdvancedAnalytics() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">🎯 Attività Quiz</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Target className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+            Attività Quiz
+          </h3>
           <div className="text-sm text-gray-500">
             {data.quizActivity.length > 0 ? (
               <div className="space-y-1">
@@ -336,9 +349,10 @@ export default function AdvancedAnalytics() {
       <div className="text-center">
         <button
           onClick={loadAnalytics}
-          className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition"
+          className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition flex items-center gap-2 mx-auto"
         >
-          🔄 Aggiorna Dati
+          <RotateCcw className="w-5 h-5" />
+          Aggiorna Dati
         </button>
       </div>
     </div>

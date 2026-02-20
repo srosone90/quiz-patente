@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Grid3x3, Trophy } from 'lucide-react';
+import { Grid3x3, Trophy, Medal, Award, BookOpen } from 'lucide-react';
 
 interface CategoryData {
   category: string;
@@ -78,12 +78,13 @@ export default function CategoryHeatmap() {
     return 'Da migliorare';
   }
 
-  function getPerformanceIcon(accuracy: number): string {
-    if (accuracy >= 90) return '🏆';
-    if (accuracy >= 80) return '🥇';
-    if (accuracy >= 70) return '🥈';
-    if (accuracy >= 60) return '🥉';
-    return '📚';
+  function getPerformanceIcon(accuracy: number) {
+    const className = "w-7 h-7";
+    if (accuracy >= 90) return <Trophy className={className} />;
+    if (accuracy >= 80) return <Medal className={className} />;
+    if (accuracy >= 70) return <Award className={className} />;
+    if (accuracy >= 60) return <Award className={className} />;
+    return <BookOpen className={className} />;
   }
 
   return (
