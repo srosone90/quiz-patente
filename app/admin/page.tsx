@@ -9,7 +9,9 @@ import {
   getAllAccessCodes,
   getAllUsers,
   getAdminQuestionStats,
-  getB2BDashboardStats
+  getB2BDashboardStats,
+  updateUser,
+  deleteUser
 } from '@/lib/supabase'
 import B2BClients from '@/components/B2BClients'
 import B2BCalendar from '@/components/B2BCalendar'
@@ -159,6 +161,89 @@ export default function AdminDashboard() {
       alert(`Errore nella generazione del codice:\n\n${error.message || error}`)
     } finally {
       setGenerating(false)
+    }
+  }
+
+  async function handleUpdateUserRole(userId: string, newRole: string) {
+    if (!confirm(`Confermi di voler cambiare il ruolo a ${newRole}?`)) return
+
+    try {
+      const result = await updateUser(userId, { role: newRole })
+      if (result.error) {
+        alert(`Errore: ${result.error}`)
+        return
+      }
+
+      alert('Ruolo aggiornato con successo!')
+      
+      // Ricarica utenti
+      const { data: allUsers } = await getAllUsers()
+      setUsers(allUsers || [])
+    } catch (error: any) {
+      console.error('Errore modifica ruolo:', error)
+      alert(`Errore: ${error.message || error}`)
+    }
+  }
+
+  async function handleUpdateUserSubscription(userId: string, newType: string) {
+    if (!confirm(`Confermi di voler cambiare la subscription a ${newType}?`)) return
+
+    let expiresAt = null
+    if (newType !== 'free') {
+      // Aggiungi 30 giorni per subscription premium
+      const expires = new Date()
+      expires.setDate(expires.getDate() + 30)
+      expiresAt = expires.toISOString()
+    }
+
+    try {
+      const result = await updateUser(userId, { 
+        subscription_type: newType,
+        subscription_expires_at: expiresAt
+      })
+      
+      if (result.error) {
+        alert(`Errore: ${result.error}`)
+        return
+      }
+
+      alert('Subscription aggiornata con successo!')
+      
+      // Ricarica utenti
+      const { data: allUsers } = await getAllUsers()
+      setUsers(allUsers || [])
+    } catch (error: any) {
+      console.error('Errore modifica subscription:', error)
+      alert(`Errore: ${error.message || error}`)
+    }
+  }
+
+  async function handleDeleteUser(userId: string, userEmail: string) {
+    if (!confirm(`⚠️ ATTENZIONE!\n\nSei sicuro di voler ELIMINARE definitivamente l'utente:\n${userEmail}\n\nQuesta azione NON può essere annullata!\n\nDigita "ELIMINA" per confermare.`)) {
+      return
+    }
+
+    const confirmation = prompt('Digita "ELIMINA" per confermare:')
+    if (confirmation !== 'ELIMINA') {
+      alert('Operazione annullata')
+      return
+    }
+
+    try {
+      const result = await deleteUser(userId)
+      if (result.error) {
+        alert(`Errore: ${result.error}`)
+        return
+      }
+
+      alert('Utente eliminato con successo!')
+      
+      // Ricarica utenti
+      const { data: allUsers } = await getAllUsers()
+      setUsers(allUsers || [])
+    } catch (error: any) {
+      console.error('Errore eliminazione utente:', error)
+      alert(`Errore: ${error.message || error}`)
     }
   }
 
@@ -409,6 +494,7 @@ export default function AdminDashboard() {
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Ruolo</th>
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Scadenza</th>
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Registrato</th>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Azioni</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -424,25 +510,40 @@ export default function AdminDashboard() {
                           <td className="py-3 px-6 text-sm text-gray-900 dark:text-gray-100">{user.email || 'N/A'}</td>
                           <td className="py-3 px-6 text-sm text-gray-700 dark:text-gray-300">{user.full_name || '-'}</td>
                           <td className="py-3 px-6 text-sm">
-                            <span className={`px-3 py-1 rounded-md text-xs font-medium ${
-                              user.subscription_type === 'free'
-                                ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                                : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                            }`}>
-                              {user.subscription_type === 'free' ? 'Free' : user.subscription_type}
-                            </span>
+                            <select
+                              value={user.subscription_type}
+                              onChange={(e) => handleUpdateUserSubscription(user.id, e.target.value)}
+                              className="px-2 py-1 rounded-md text-xs font-medium border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600"
+                            >
+                              <option value="free">Free</option>
+                              <option value="last_minute">Last Minute</option>
+                              <option value="senza_pensieri">Senza Pensieri</option>
+                            </select>
                           </td>
                           <td className="py-3 px-6 text-sm">
-                            <span className={`px-3 py-1 rounded-md text-xs font-medium ${
-                              isUserAdmin
-                                ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                            }`}>
-                              {isUserAdmin ? '👑 Admin' : 'User'}
-                            </span>
+                            <select
+                              value={user.role || 'user'}
+                              onChange={(e) => handleUpdateUserRole(user.id, e.target.value)}
+                              className={`px-2 py-1 rounded-md text-xs font-medium border border-gray-300 dark:border-gray-600 cursor-pointer ${
+                                isUserAdmin
+                                  ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              <option value="user">User</option>
+                              <option value="admin">👑 Admin</option>
+                            </select>
                           </td>
                           <td className="py-3 px-6 text-sm text-gray-700 dark:text-gray-300">{expiresDate}</td>
                           <td className="py-3 px-6 text-sm text-gray-700 dark:text-gray-300">{createdDate}</td>
+                          <td className="py-3 px-6 text-sm">
+                            <button
+                              onClick={() => handleDeleteUser(user.id, user.email)}
+                              className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs font-medium transition-colors"
+                            >
+                              🗑️ Elimina
+                            </button>
+                          </td>
                         </tr>
                       )
                     })}
@@ -450,13 +551,10 @@ export default function AdminDashboard() {
                 </table>
               </div>
             )}
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/20">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                <strong>⚠️ Nota:</strong> Per modificare i ruoli degli utenti e gestire i permessi admin, 
-                è necessario accedere direttamente al database di Supabase tramite SQL:
-                <code className="block mt-2 p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded text-xs">
-                  UPDATE user_profiles SET role = 'admin' WHERE email = 'user@example.com';
-                </code>
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-green-50 dark:bg-green-900/20">
+              <p className="text-sm text-green-800 dark:text-green-200">
+                <strong>✅ Modifica diretta:</strong> Ora puoi modificare ruoli e subscription degli utenti direttamente da questa tabella. 
+                Usa i dropdown per cambiare i valori, oppure clicca "Elimina" per rimuovere definitivamente un utente.
               </p>
             </div>
           </div>

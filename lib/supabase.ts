@@ -450,6 +450,58 @@ export async function updateUserSubscription(
   return { data, error }
 }
 
+// Modifica utente (admin) - ruolo, subscription, etc.
+export async function updateUser(userId: string, updates: any) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Non autenticato')
+
+    const response = await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ userId, updates })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Errore modifica utente')
+    }
+
+    return await response.json()
+  } catch (error: any) {
+    console.error('Errore updateUser:', error)
+    return { error: error.message }
+  }
+}
+
+// Elimina utente (admin)
+export async function deleteUser(userId: string) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Non autenticato')
+
+    const response = await fetch(`/api/admin/users?userId=${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Errore eliminazione utente')
+    }
+
+    return await response.json()
+  } catch (error: any) {
+    console.error('Errore deleteUser:', error)
+    return { error: error.message }
+  }
+}
+
 // ========================================
 // FUNZIONI GESTIONALE B2B
 // ========================================
