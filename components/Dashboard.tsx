@@ -356,11 +356,11 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="grid sm:grid-cols-2 gap-4">
+        {/* Action Buttons - Grid centrato quando c'è solo 1 pulsante */}
+        <div className={`grid gap-4 ${isPremium || isFreeBetaMode ? 'sm:grid-cols-1 place-items-center' : 'sm:grid-cols-2'}`}>
           <Link
             href={`/quiz?plan=${isPremium ? 'premium' : 'free'}`}
-            className="group card-hover p-8 flex flex-col items-center text-center bg-gradient-to-br from-primary-600 to-primary-700 text-white border-none"
+            className={`group card-hover p-8 flex flex-col items-center text-center bg-gradient-to-br from-primary-600 to-primary-700 text-white border-none ${isPremium || isFreeBetaMode ? 'w-full max-w-md' : 'w-full'}`}
           >
             <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🎯</div>
             <h3 className="text-2xl font-bold mb-2">
@@ -375,7 +375,7 @@ export default function Dashboard() {
           {!isPremium && !isFreeBetaMode && (
             <Link
               href="/pricing"
-              className="group card-hover p-8 flex flex-col items-center text-center"
+              className="group card-hover p-8 flex flex-col items-center text-center w-full"
             >
               <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">⭐</div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">
