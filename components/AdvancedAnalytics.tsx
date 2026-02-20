@@ -85,7 +85,7 @@ export default function AdvancedAnalytics() {
       // Quiz stats
       const { data: quizData } = await supabase
         .from('quiz_results')
-        .select('score, passed, created_at, category')
+        .select('score, passed, created_at')
         .gte('created_at', rangeDate.toISOString())
 
       const totalQuizzes = quizData?.length || 0
