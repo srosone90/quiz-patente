@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { LucideIcon } from 'lucide-react'
 
 interface DashboardMenuItem {
   id: string
   label: string
-  icon: string
+  Icon: LucideIcon
   description: string
 }
 
@@ -65,15 +66,13 @@ export default function DashboardMenu({ items, activeSection, onSectionChange }:
           <div className={`
             flex-shrink-0 w-14 h-14 rounded-xl
             flex items-center justify-center
-            text-2xl transition-all duration-300
-            ${isOpen
-              ? 'bg-primary-800 dark:bg-accent-400 scale-110'
-              : 'bg-gray-100 dark:bg-dark-surface group-hover:bg-primary-100 dark:group-hover:bg-primary-900/20 group-hover:scale-110'
+            transition-all duration-300
+            ${ isOpen
+              ? 'bg-primary-800 dark:bg-accent-400 text-white scale-110'
+              : 'bg-gray-100 dark:bg-dark-surface text-primary-800 dark:text-accent-400 group-hover:bg-primary-100 dark:group-hover:bg-primary-900/20 group-hover:scale-110'
             }
           `}>
-            <span className={isOpen ? '' : 'group-hover:scale-110 transition-transform'}>
-              {activeItem?.icon}
-            </span>
+            {activeItem?.Icon && <activeItem.Icon className={`w-7 h-7 ${!isOpen && 'group-hover:scale-110 transition-transform'}`} />}
           </div>
           
           {/* Text */}
@@ -145,13 +144,13 @@ export default function DashboardMenu({ items, activeSection, onSectionChange }:
                 <div className={`
                   flex-shrink-0 w-12 h-12 rounded-xl
                   flex items-center justify-center
-                  text-xl transition-all duration-300
+                  transition-all duration-300
                   ${isActive
-                    ? 'bg-white/20 backdrop-blur-sm scale-110'
-                    : 'bg-gray-100 dark:bg-dark-surface group-hover:scale-110'
+                    ? 'bg-white/20 backdrop-blur-sm text-white scale-110'
+                    : 'bg-gray-100 dark:bg-dark-surface text-primary-800 dark:text-primary-400 group-hover:scale-110'
                   }
                 `}>
-                  {item.icon}
+                  <item.Icon className="w-6 h-6" />
                 </div>
                 
                 {/* Text */}

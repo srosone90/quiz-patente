@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getCurrentUser, getQuizHistory, getUserProfile, signOut, QuizResult } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { Home, Trophy, Users, User, Gift, Calendar, Target, RotateCcw, BarChart3, TrendingUp, Map, FileText, FileEdit, Rocket, Star, PartyPopper, Lightbulb, Ticket } from 'lucide-react'
 import CategorySelector from './CategorySelector'
 import ReviewMode from './ReviewMode'
 import StatisticsChart from './StatisticsChart'
@@ -101,21 +102,21 @@ export default function Dashboard() {
   const isPremium = isFreeBetaMode ? true : profile?.subscription_type !== 'free'
 
   const allMenuItems = [
-    { id: 'overview', label: 'Panoramica', icon: '🏠', description: 'Informazioni generali' },
-    { id: 'progress', label: 'Progresso', icon: '🏆', description: 'Livelli e trofei' },
-    { id: 'leaderboard', label: 'Classifica', icon: '👥', description: 'Top studenti' },
-    { id: 'profile', label: 'Profilo', icon: '👤', description: 'Profilo pubblico' },
-    { id: 'referral', label: 'Referral', icon: '🎁', description: 'Invita amici' },
-    { id: 'exam', label: 'Esame', icon: '📅', description: 'Countdown esame' },
-    { id: 'quiz', label: 'Avvia Quiz', icon: '🎯', description: 'Inizia una simulazione' },
-    { id: 'review', label: 'Ripasso', icon: '🔄', description: 'Ripassa gli errori' },
-    { id: 'statistics', label: 'Statistiche', icon: '📊', description: 'Analisi prestazioni' },
-    { id: 'temporal', label: 'Andamento', icon: '📈', description: 'Grafici temporali' },
-    { id: 'heatmap', label: 'Heatmap', icon: '🗺️', description: 'Categorie' },
-    { id: 'pdf', label: 'Esporta PDF', icon: '📄', description: 'Download report' },
-    { id: 'history', label: 'Storico', icon: '📝', description: 'Quiz completati' },
+    { id: 'overview', label: 'Panoramica', Icon: Home, description: 'Informazioni generali' },
+    { id: 'progress', label: 'Progresso', Icon: Trophy, description: 'Livelli e trofei' },
+    { id: 'leaderboard', label: 'Classifica', Icon: Users, description: 'Top studenti' },
+    { id: 'profile', label: 'Profilo', Icon: User, description: 'Profilo pubblico' },
+    { id: 'referral', label: 'Referral', Icon: Gift, description: 'Invita amici' },
+    { id: 'exam', label: 'Esame', Icon: Calendar, description: 'Countdown esame' },
+    { id: 'quiz', label: 'Avvia Quiz', Icon: Target, description: 'Inizia una simulazione' },
+    { id: 'review', label: 'Ripasso', Icon: RotateCcw, description: 'Ripassa gli errori' },
+    { id: 'statistics', label: 'Statistiche', Icon: BarChart3, description: 'Analisi prestazioni' },
+    { id: 'temporal', label: 'Andamento', Icon: TrendingUp, description: 'Grafici temporali' },
+    { id: 'heatmap', label: 'Heatmap', Icon: Map, description: 'Categorie' },
+    { id: 'pdf', label: 'Esporta PDF', Icon: FileText, description: 'Download report' },
+    { id: 'history', label: 'Storico', Icon: FileEdit, description: 'Quiz completati' },
     // TODO: Riabilitare quando implementeremo le traduzioni complete
-    // { id: 'language', label: 'Lingua', icon: '🌐', description: 'Cambia lingua' }
+    // { id: 'language', label: 'Lingua', Icon: Globe, description: 'Cambia lingua' }
   ]
 
   // 🔵 BETA MODE: Nascondi referral system
@@ -134,7 +135,7 @@ export default function Dashboard() {
             <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4 text-center sm:text-left">
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                  <span className="text-3xl">🎉</span>
+                  <PartyPopper className="w-7 h-7 text-white" />
                 </div>
                 <div>
                   <p className="font-bold text-xl sm:text-2xl">Beta Gratuita Attiva!</p>
@@ -270,7 +271,7 @@ export default function Dashboard() {
                   <div className="flex flex-col items-center lg:items-start text-center lg:text-left w-full">
                     {/* Icona principale */}
                     <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                      <span className="text-5xl">🚀</span>
+                      <Rocket className="w-12 h-12 text-primary-900" />
                     </div>
                     
                     {/* Testo */}
@@ -286,7 +287,7 @@ export default function Dashboard() {
                       href="/pricing"
                       className="btn-cta inline-flex items-center gap-3 shadow-[0_10px_40px_rgba(251,191,36,0.5)] animate-pulse hover:animate-none mb-4"
                     >
-                      <span className="text-2xl">⭐</span>
+                      <Star className="w-6 h-6" fill="currentColor" />
                       <span>Scopri i Piani Premium</span>
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
@@ -301,22 +302,22 @@ export default function Dashboard() {
                   {/* Colonna Destra: Features highlights */}
                   <div className="grid grid-cols-2 gap-4 w-full max-w-md lg:max-w-none">
                     <div className="bg-white/20 backdrop-blur-sm rounded-xl p-5 text-primary-900 hover:bg-white/30 transition-all">
-                      <div className="text-4xl mb-3">📝</div>
+                      <div className="mb-3"><FileEdit className="w-10 h-10" /></div>
                       <div className="font-bold text-xl mb-1">20 Domande</div>
                       <div className="text-sm opacity-90">Quiz completi</div>
                     </div>
                     <div className="bg-white/20 backdrop-blur-sm rounded-xl p-5 text-primary-900 hover:bg-white/30 transition-all">
-                      <div className="text-4xl mb-3">⏱️</div>
+                      <div className="mb-3"><Calendar className="w-10 h-10" /></div>
                       <div className="font-bold text-xl mb-1">30 Minuti</div>
                       <div className="text-sm opacity-90">Tempo extra</div>
                     </div>
                     <div className="bg-white/20 backdrop-blur-sm rounded-xl p-5 text-primary-900 hover:bg-white/30 transition-all">
-                      <div className="text-4xl mb-3">💡</div>
+                      <div className="mb-3"><Lightbulb className="w-10 h-10" /></div>
                       <div className="font-bold text-xl mb-1">Spiegazioni</div>
                       <div className="text-sm opacity-90">Dettagliate</div>
                     </div>
                     <div className="bg-white/20 backdrop-blur-sm rounded-xl p-5 text-primary-900 hover:bg-white/30 transition-all">
-                      <div className="text-4xl mb-3">🎯</div>
+                      <div className="mb-3"><Target className="w-10 h-10" /></div>
                       <div className="font-bold text-xl mb-1">Categorie</div>
                       <div className="text-sm opacity-90">Filtra argomenti</div>
                     </div>
@@ -362,7 +363,9 @@ export default function Dashboard() {
             href={`/quiz?plan=${isPremium ? 'premium' : 'free'}`}
             className={`group card-hover p-8 flex flex-col items-center text-center bg-gradient-to-br from-primary-600 to-primary-700 text-white border-none ${isPremium || isFreeBetaMode ? 'w-full max-w-md' : 'w-full'}`}
           >
-            <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🎯</div>
+            <div className="mb-4 group-hover:scale-110 transition-transform">
+              <Target className="w-16 h-16" />
+            </div>
             <h3 className="text-2xl font-bold mb-2">
               {isPremium ? 'Inizia Quiz Premium' : (isFreeBetaMode ? 'Inizia Quiz Gratuito' : 'Prova Quiz Demo')}
             </h3>
@@ -377,7 +380,9 @@ export default function Dashboard() {
               href="/pricing"
               className="group card-hover p-8 flex flex-col items-center text-center w-full"
             >
-              <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">⭐</div>
+              <div className="mb-4 group-hover:scale-110 transition-transform">
+                <Star className="w-16 h-16 text-accent-400" fill="currentColor" />
+              </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">
                 Piani Premium
               </h3>
@@ -394,8 +399,9 @@ export default function Dashboard() {
         {activeSection === 'progress' && user && (
           <div className="space-y-6">
             <div className="mb-4">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">
-                🏆 Il Tuo Progresso
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-dark-text-primary mb-2 flex items-center gap-3">
+                <Trophy className="w-8 h-8 text-accent-400" />
+                Il Tuo Progresso
               </h2>
               <p className="text-gray-600 dark:text-dark-text-secondary">
                 Livelli, trofei e statistiche di gamification
@@ -466,8 +472,9 @@ export default function Dashboard() {
         {activeSection === 'quiz' && (
           <div className="space-y-6">
             <div className="card p-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-4">
-                🎯 Avvia Nuova Simulazione
+              <h2 className="text-2xl sm:text-3xl font-bold text-primary-900 dark:text-dark-text-primary mb-4 flex items-center gap-3">
+                <Target className="w-7 h-7 text-accent-400" />
+                Avvia Nuova Simulazione
               </h2>
               <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
                 Scegli come vuoi esercitarti: quiz completo o per categoria specifica
@@ -523,8 +530,9 @@ export default function Dashboard() {
         {activeSection === 'review' && (
           <div className="space-y-6">
             <div className="card p-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-4">
-                🔄 Ripassa gli Errori
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-4 flex items-center gap-3">
+                <RotateCcw className="w-6 h-6 text-orange-500" />
+                Ripassa gli Errori
               </h2>
               <p className="text-gray-600 dark:text-dark-text-secondary mb-6">
                 Rivedi le domande a cui hai risposto in modo errato per migliorare la tua preparazione
