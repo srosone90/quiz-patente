@@ -7,12 +7,13 @@
 -- 
 -- WHAT THIS SCRIPT FIXES:
 -- 1. ✅ Add email column to user_profiles
--- 2. ✅ Sync email from auth.users (trigger + backfill)
--- 3. ✅ Drop deprecated is_admin column
--- 4. ✅ Create admin_global_stats view
--- 5. ✅ Create admin_question_stats view
--- 6. ✅ Add useful indexes for performance
--- 7. ✅ Add data integrity CHECK constraints
+-- 2. ✅ Update ALL RLS policies to use 'role' instead of 'is_admin'
+-- 3. ✅ Sync email from auth.users (trigger + backfill)
+-- 4. ✅ Drop deprecated is_admin column (after updating policies)
+-- 5. ✅ Create admin_global_stats view
+-- 6. ✅ Create admin_question_stats view
+-- 7. ✅ Add useful indexes for performance
+-- 8. ✅ Add data integrity CHECK constraints
 -- ============================================
 
 -- ===========================================
@@ -67,10 +68,145 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION sync_user_profile_email();
 
 -- ===========================================
--- PART 2: CLEANUP - DROP DEPRECATED COLUMNS
+-- PART 2: UPDATE RLS POLICIES TO USE 'role'
 -- ===========================================
 
--- Drop is_admin column (we use 'role' now)
+-- First, we need to update ALL policies that use is_admin
+-- Otherwise DROP COLUMN will fail with dependency errors
+
+-- Update access_codes policies
+DROP POLICY IF EXISTS "Solo admin vedono codici" ON access_codes;
+CREATE POLICY "Solo admin vedono codici" ON access_codes
+  FOR SELECT 
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_profiles 
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+DROP POLICY IF EXISTS "Solo admin creano codici" ON access_codes;
+CREATE POLICY "Solo admin creano codici" ON access_codes
+  FOR INSERT 
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_profiles 
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+DROP POLICY IF EXISTS "Solo admin modificano codici" ON access_codes;
+CREATE POLICY "Solo admin modificano codici" ON access_codes
+  FOR UPDATE 
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_profiles 
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+DROP POLICY IF EXISTS "Solo admin eliminano codici" ON access_codes;
+CREATE POLICY "Solo admin eliminano codici" ON access_codes
+  FOR DELETE 
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_profiles 
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+-- Update b2b tables policies (if they exist)
+DO $$
+BEGIN
+  -- b2b_clients
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'b2b_clients') THEN
+    DROP POLICY IF EXISTS "Admin can do everything on b2b_clients" ON b2b_clients;
+    EXECUTE 'CREATE POLICY "Admin can do everything on b2b_clients" ON b2b_clients
+      FOR ALL USING (
+        EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = ''admin'')
+      )';
+  END IF;
+
+  -- b2b_contacts
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'b2b_contacts') THEN
+    DROP POLICY IF EXISTS "Admin can do everything on b2b_contacts" ON b2b_contacts;
+    EXECUTE 'CREATE POLICY "Admin can do everything on b2b_contacts" ON b2b_contacts
+      FOR ALL USING (
+        EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = ''admin'')
+      )';
+  END IF;
+
+  -- b2b_contracts
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'b2b_contracts') THEN
+    DROP POLICY IF EXISTS "Admin can do everything on b2b_contracts" ON b2b_contracts;
+    EXECUTE 'CREATE POLICY "Admin can do everything on b2b_contracts" ON b2b_contracts
+      FOR ALL USING (
+        EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = ''admin'')
+      )';
+  END IF;
+
+  -- b2b_appointments
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'b2b_appointments') THEN
+    DROP POLICY IF EXISTS "Admin can do everything on b2b_appointments" ON b2b_appointments;
+    EXECUTE 'CREATE POLICY "Admin can do everything on b2b_appointments" ON b2b_appointments
+      FOR ALL USING (
+        EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = ''admin'')
+      )';
+  END IF;
+
+  -- b2b_invoices
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'b2b_invoices') THEN
+    DROP POLICY IF EXISTS "Admin can do everything on b2b_invoices" ON b2b_invoices;
+    EXECUTE 'CREATE POLICY "Admin can do everything on b2b_invoices" ON b2b_invoices
+      FOR ALL USING (
+        EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = ''admin'')
+      )';
+  END IF;
+
+  -- b2b_documents
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'b2b_documents') THEN
+    DROP POLICY IF EXISTS "Admin can do everything on b2b_documents" ON b2b_documents;
+    EXECUTE 'CREATE POLICY "Admin can do everything on b2b_documents" ON b2b_documents
+      FOR ALL USING (
+        EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = ''admin'')
+      )';
+  END IF;
+
+  -- b2b_tasks
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'b2b_tasks') THEN
+    DROP POLICY IF EXISTS "Admin can do everything on b2b_tasks" ON b2b_tasks;
+    EXECUTE 'CREATE POLICY "Admin can do everything on b2b_tasks" ON b2b_tasks
+      FOR ALL USING (
+        EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = ''admin'')
+      )';
+  END IF;
+
+  -- b2b_notes
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'b2b_notes') THEN
+    DROP POLICY IF EXISTS "Admin can do everything on b2b_notes" ON b2b_notes;
+    EXECUTE 'CREATE POLICY "Admin can do everything on b2b_notes" ON b2b_notes
+      FOR ALL USING (
+        EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = ''admin'')
+      )';
+  END IF;
+
+  -- b2b_transactions
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'b2b_transactions') THEN
+    DROP POLICY IF EXISTS "Admin can do everything on b2b_transactions" ON b2b_transactions;
+    EXECUTE 'CREATE POLICY "Admin can do everything on b2b_transactions" ON b2b_transactions
+      FOR ALL USING (
+        EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = ''admin'')
+      )';
+  END IF;
+
+  RAISE NOTICE '✅ Updated all RLS policies to use role instead of is_admin';
+END $$;
+
+-- ===========================================
+-- PART 3: CLEANUP - DROP DEPRECATED COLUMNS
+-- ===========================================
+
+-- Now we can safely drop is_admin column
 DO $$ 
 BEGIN
   IF EXISTS (
@@ -85,7 +221,7 @@ BEGIN
 END $$;
 
 -- ===========================================
--- PART 3: CREATE ADMIN STATISTICS VIEWS
+-- PART 4: CREATE ADMIN STATISTICS VIEWS
 -- ===========================================
 
 -- Create admin_global_stats view for dashboard
@@ -131,7 +267,7 @@ EXCEPTION
 END $$;
 
 -- ===========================================
--- PART 4: PERFORMANCE INDEXES
+-- PART 5: PERFORMANCE INDEXES
 -- ===========================================
 
 -- Index on user_progress.total_xp for leaderboard queries
@@ -151,7 +287,7 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_role
 ON user_profiles(role);
 
 -- ===========================================
--- PART 5: DATA INTEGRITY CONSTRAINTS
+-- PART 6: DATA INTEGRITY CONSTRAINTS
 -- ===========================================
 
 -- Ensure score_percentage is between 0 and 100
@@ -207,7 +343,7 @@ EXCEPTION
 END $$;
 
 -- ===========================================
--- PART 6: VERIFY RLS POLICIES
+-- PART 7: VERIFY RLS POLICIES
 -- ===========================================
 
 -- Ensure RLS is enabled on all tables
@@ -218,7 +354,7 @@ ALTER TABLE access_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE code_redemptions ENABLE ROW LEVEL SECURITY;
 
 -- ===========================================
--- PART 7: VERIFICATION QUERIES
+-- PART 8: VERIFICATION QUERIES
 -- ===========================================
 
 -- Show all user_profiles columns (should now include email)
