@@ -261,57 +261,67 @@ export default function Dashboard() {
               <div className="absolute inset-0 bg-gradient-to-br from-accent-400 via-accent-500 to-accent-600 rounded-3xl"></div>
               <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
               
-              {/* Contenuto */}
+              {/* Contenuto - Layout bilanciato desktop */}
               <div className="relative p-8 sm:p-10">
-                <div className="flex flex-col items-center text-center">
-                  {/* Icona principale */}
-                  <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                    <span className="text-5xl">🚀</span>
+                {/* Mobile: Centrato | Desktop: Grid 2 colonne */}
+                <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                  
+                  {/* Colonna Sinistra: Testo e CTA */}
+                  <div className="flex flex-col items-center lg:items-start text-center lg:text-left w-full">
+                    {/* Icona principale */}
+                    <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                      <span className="text-5xl">🚀</span>
+                    </div>
+                    
+                    {/* Testo */}
+                    <h3 className="text-3xl sm:text-4xl font-bold text-primary-900 mb-3">
+                      Passa al Premium!
+                    </h3>
+                    <p className="text-lg text-primary-800 mb-8 leading-relaxed">
+                      Sblocca quiz completi da <strong>20 domande</strong>, più tempo, spiegazioni dettagliate e tanto altro.
+                    </p>
+                    
+                    {/* CTA Button - SUPER PROMINENTE */}
+                    <Link
+                      href="/pricing"
+                      className="btn-cta inline-flex items-center gap-3 shadow-[0_10px_40px_rgba(251,191,36,0.5)] animate-pulse hover:animate-none mb-4"
+                    >
+                      <span className="text-2xl">⭐</span>
+                      <span>Scopri i Piani Premium</span>
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                    
+                    <p className="text-sm text-primary-800/80">
+                      💳 Pagamento sicuro con Stripe • Attivazione istantanea
+                    </p>
                   </div>
                   
-                  {/* Testo */}
-                  <h3 className="text-3xl sm:text-4xl font-bold text-primary-900 mb-3">
-                    Passa al Premium!
-                  </h3>
-                  <p className="text-lg text-primary-800 mb-8 max-w-md leading-relaxed">
-                    Sblocca quiz completi da <strong>20 domande</strong>, più tempo, spiegazioni dettagliate e tanto altro.
-                  </p>
-                  
-                  {/* Features highlights */}
-                  <div className="grid grid-cols-2 gap-4 mb-8 w-full max-w-lg">
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-primary-900">
-                      <div className="text-3xl mb-2">✓</div>
-                      <div className="font-semibold">20 Domande</div>
+                  {/* Colonna Destra: Features highlights */}
+                  <div className="grid grid-cols-2 gap-4 w-full max-w-md lg:max-w-none">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-5 text-primary-900 hover:bg-white/30 transition-all">
+                      <div className="text-4xl mb-3">📝</div>
+                      <div className="font-bold text-xl mb-1">20 Domande</div>
+                      <div className="text-sm opacity-90">Quiz completi</div>
                     </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-primary-900">
-                      <div className="text-3xl mb-2">✓</div>
-                      <div className="font-semibold">30 Minuti</div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-5 text-primary-900 hover:bg-white/30 transition-all">
+                      <div className="text-4xl mb-3">⏱️</div>
+                      <div className="font-bold text-xl mb-1">30 Minuti</div>
+                      <div className="text-sm opacity-90">Tempo extra</div>
                     </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-primary-900">
-                      <div className="text-3xl mb-2">✓</div>
-                      <div className="font-semibold">Spiegazioni</div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-5 text-primary-900 hover:bg-white/30 transition-all">
+                      <div className="text-4xl mb-3">💡</div>
+                      <div className="font-bold text-xl mb-1">Spiegazioni</div>
+                      <div className="text-sm opacity-90">Dettagliate</div>
                     </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-primary-900">
-                      <div className="text-3xl mb-2">✓</div>
-                      <div className="font-semibold">Categorie</div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-5 text-primary-900 hover:bg-white/30 transition-all">
+                      <div className="text-4xl mb-3">🎯</div>
+                      <div className="font-bold text-xl mb-1">Categorie</div>
+                      <div className="text-sm opacity-90">Filtra argomenti</div>
                     </div>
                   </div>
                   
-                  {/* CTA Button - SUPER PROMINENTE */}
-                  <Link
-                    href="/pricing"
-                    className="btn-cta inline-flex items-center gap-3 shadow-[0_10px_40px_rgba(251,191,36,0.5)] animate-pulse hover:animate-none"
-                  >
-                    <span className="text-2xl">⭐</span>
-                    <span>Scopri i Piani Premium</span>
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
-                  
-                  <p className="mt-4 text-sm text-primary-800/80">
-                    💳 Pagamento sicuro con Stripe • Attivazione istantanea
-                  </p>
                 </div>
               </div>
             </div>
