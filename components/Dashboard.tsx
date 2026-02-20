@@ -364,7 +364,7 @@ export default function Dashboard() {
           >
             <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🎯</div>
             <h3 className="text-2xl font-bold mb-2">
-              {isFreeBetaMode ? 'Inizia Quiz Gratuito' : (isPremium ? 'Inizia Quiz Premium' : 'Prova Quiz Demo')}
+              {isPremium ? 'Inizia Quiz Premium' : (isFreeBetaMode ? 'Inizia Quiz Gratuito' : 'Prova Quiz Demo')}
             </h3>
             <p className="text-primary-100">
               {isPremium ? '20 domande • 30 minuti' : '10 domande • 10 minuti'}
