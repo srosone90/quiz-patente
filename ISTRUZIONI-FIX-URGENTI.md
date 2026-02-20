@@ -1,4 +1,18 @@
-# 🚨 ISTRUZIONI URGENTI - FIX APPLICATI
+# 🚨 ISTRUZIONI URGENTI - FIX APPLICATI (AGGIORNATO)
+
+## ⚠️ IMPORTANTE: USA I NUOVI SCRIPT!
+
+Gli script originali davano errori perché mancavano dipendenze. **USA QUESTI:**
+
+📂 **[ESEGUI-QUESTI-SCRIPT.md](ESEGUI-QUESTI-SCRIPT.md)** ← GUIDA COMPLETA PASSO-PASSO
+
+### Script corretti da eseguire su Supabase:
+
+1. **[FIX-XP-TRIGGER-COMPLETO.sql](FIX-XP-TRIGGER-COMPLETO.sql)** ← Include funzione calculate_level()
+2. **[FIX-RLS-ADMIN-COMPLETO.sql](FIX-RLS-ADMIN-COMPLETO.sql)** ← Include colonna role
+3. ~~ADD-PAYMENT-TRACKING.sql~~ ← Già eseguito ✓
+
+---
 
 ## ✅ COSA HO FATTO:
 
@@ -38,19 +52,24 @@ Ho analizzato e risolto **7 BUG CRITICI** che hai segnalato:
 
 ## 🔥 AZIONE RICHIESTA URGENTE:
 
-### STEP 1: Esegui SQL su Supabase (OBBLIGATORIO)
+### ⭐ SEGUI LA GUIDA COMPLETA: [ESEGUI-QUESTI-SCRIPT.md](ESEGUI-QUESTI-SCRIPT.md)
+
+**In sintesi:**
+
+### STEP 1: Esegui SQL su Supabase (OBBLIGATORIO - 10 minuti)
 
 1. Vai su [app.supabase.com](https://app.supabase.com)
 2. Seleziona progetto "driverquizpa"
 3. Sidebar → **SQL Editor** → New query
-4. Copia e incolla il contenuto di **[FIX-XP-TRIGGER.sql](FIX-XP-TRIGGER.sql)**
-5. Clicca **Run** (in basso a destra)
-6. Verifica result: "SUCCESS: ✓"
 
-7. Ripeti procedura con **[FIX-RLS-ADMIN-USERS.sql](FIX-RLS-ADMIN-USERS.sql)**
-   - ⚠️ **IMPORTANTE**: Prima di eseguire, sostituisci `'tuaemail@example.com'` con la TUA email effettiva (riga 64)
+**Script 1: FIX XP**
+4. Copia/incolla **[FIX-XP-TRIGGER-COMPLETO.sql](FIX-XP-TRIGGER-COMPLETO.sql)** (NON quello vecchio!)
+5. Clicca **Run** → Aspettati "SUCCESS"
 
-8. (OPZIONALE) Esegui **[ADD-PAYMENT-TRACKING.sql](ADD-PAYMENT-TRACKING.sql)** se vuoi tracciare pagamenti codici B2B
+**Script 2: FIX ADMIN**
+6. Copia/incolla **[FIX-RLS-ADMIN-COMPLETO.sql](FIX-RLS-ADMIN-COMPLETO.sql)**
+7. ⚠️ **MODIFICA RIGA 80**: Sostituisci `'METTI_QUI_LA_TUA_EMAIL@example.com'` con la TUA email vera
+8. Clicca **Run** → Aspettati "SUCCESS, 1 row updated"
 
 ### STEP 2: Verifica Deployment Netlify
 
