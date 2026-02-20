@@ -1,14 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {  
   body {
-    @apply bg-gradient-to-br from-primary-50 via-white to-accent-50 
+    @apply bg-gradient-to-br from-primary-50 via-white to-primary-100/30
            dark:from-dark-bg dark:via-dark-bg dark:to-dark-surface
            text-gray-900 dark:text-dark-text-primary
            antialiased;
     min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   }
   
   /* Smooth scrolling */
@@ -18,48 +21,120 @@
   
   /* Better focus visibility */
   *:focus-visible {
-    @apply outline-none ring-2 ring-primary-500 ring-offset-2 dark:ring-offset-dark-bg;
+    @apply outline-none ring-2 ring-accent-400 ring-offset-2 dark:ring-offset-dark-bg;
+  }
+  
+  /* Mobile-first touch optimization */
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 }
 
 @layer components {
-  /* Modern button styles */
+  /* Modern button styles - Mobile-first, thumb-friendly */
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 active:bg-primary-800
-           text-white font-semibold px-6 py-3 rounded-xl
-           transition-all duration-200 
-           hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]
-           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+    @apply bg-primary-800 hover:bg-primary-900 active:bg-primary-900
+           text-white font-semibold px-6 py-4 rounded-xl
+           transition-all duration-300 ease-out
+           hover:shadow-card-hover hover:scale-[1.02] active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+           min-h-[48px] sm:min-h-[52px];
   }
   
   .btn-secondary {
-    @apply bg-accent-500 hover:bg-accent-600 active:bg-accent-700
-           text-white font-semibold px-6 py-3 rounded-xl
-           transition-all duration-200
-           hover:shadow-lg hover:scale-[1.02] active:scale-[0.98];
+    @apply bg-white dark:bg-dark-card
+           text-primary-800 dark:text-dark-text-primary
+           border-2 border-primary-800 dark:border-dark-border
+           font-semibold px-6 py-4 rounded-xl
+           transition-all duration-300 ease-out
+           hover:bg-primary-50 dark:hover:bg-dark-hover
+           hover:shadow-card hover:scale-[1.02] active:scale-[0.98]
+           min-h-[48px] sm:min-h-[52px];
   }
   
-  /* Modern card styles */
+  /* CTA Conversione - Giallo/Oro prominente */
+  .btn-cta {
+    @apply bg-gradient-to-r from-accent-400 to-accent-500
+           hover:from-accent-500 hover:to-accent-600
+           active:from-accent-600 active:to-accent-700
+           text-primary-900 font-bold px-8 py-5 rounded-xl
+           transition-all duration-300 ease-out
+           hover:shadow-[0_8px_30px_rgba(251,191,36,0.4)]
+           hover:scale-105 active:scale-100
+           min-h-[56px] sm:min-h-[60px]
+           text-lg;
+  }
+  
+  /* Modern card styles - App-like with soft shadows */
   .card {
     @apply bg-white dark:bg-dark-card
            border border-gray-200 dark:border-dark-border
-           rounded-2xl shadow-soft
-           transition-all duration-200;
+           rounded-2xl shadow-card
+           transition-all duration-300 ease-out
+           p-6;
   }
   
   .card-hover {
-    @apply card hover:shadow-soft-lg hover:scale-[1.01];
+    @apply card hover:shadow-card-hover hover:scale-[1.01] cursor-pointer;
+  }
+  
+  /* Quiz answer card - Interactive with feedback */
+  .quiz-answer-card {
+    @apply w-full text-left p-5 rounded-xl border-2
+           transition-all duration-300 ease-out
+           font-medium text-base
+           min-h-[60px] sm:min-h-[64px]
+           flex items-center gap-4
+           touch-manipulation;
+  }
+  
+  .quiz-answer-card-default {
+    @apply quiz-answer-card
+           bg-white dark:bg-dark-card
+           border-gray-300 dark:border-dark-border
+           text-gray-900 dark:text-dark-text-primary
+           hover:border-primary-800 dark:hover:border-accent-400
+           hover:bg-primary-50 dark:hover:bg-dark-hover
+           hover:shadow-card hover:scale-[1.02]
+           cursor-pointer;
+  }
+  
+  .quiz-answer-card-selected {
+    @apply quiz-answer-card
+           bg-primary-50 dark:bg-primary-900/20
+           border-primary-800 dark:border-accent-400
+           text-primary-900 dark:text-primary-100
+           shadow-card scale-[1.02];
+  }
+  
+  .quiz-answer-card-correct {
+    @apply quiz-answer-card
+           bg-gradient-to-r from-green-50 to-green-100
+           dark:from-green-900/30 dark:to-green-800/20
+           border-green-500 dark:border-green-400
+           text-green-900 dark:text-green-100
+           shadow-[0_4px_20px_rgba(34,197,94,0.3)];
+  }
+  
+  .quiz-answer-card-incorrect {
+    @apply quiz-answer-card
+           bg-gradient-to-r from-red-50 to-red-100
+           dark:from-red-900/30 dark:to-red-800/20
+           border-red-500 dark:border-red-400
+           text-red-900 dark:text-red-100
+           shadow-[0_4px_20px_rgba(239,68,68,0.3)];
   }
   
   /* Badge styles */
   .badge {
     @apply inline-flex items-center gap-1.5
-           px-3 py-1 rounded-full text-sm font-medium
-           transition-all duration-200;
+           px-3 py-1 rounded-full text-sm font-semibold
+           transition-all duration-300;
   }
   
   .badge-premium {
-    @apply badge bg-gradient-to-r from-primary-500 to-primary-600
+    @apply badge bg-gradient-to-r from-primary-700 to-primary-800
            text-white shadow-sm;
   }
   

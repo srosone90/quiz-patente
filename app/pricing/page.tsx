@@ -98,10 +98,10 @@ export default function PricingPage() {
       <div className="max-w-6xl mx-auto">
         {/* Hero Section */}
         <div className="text-center mb-16 animate-fadeIn">
-          <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary-600 via-primary-700 to-primary-800 dark:from-accent-400 dark:via-accent-500 dark:to-accent-600 bg-clip-text text-transparent mb-6">
+          <h1 className="text-5xl md:text-6xl font-bold text-primary-900 dark:text-white mb-6">
             Scegli il Tuo Piano Premium
           </h1>
-          <p className="text-2xl text-gray-700 dark:text-gray-300 mb-3 font-medium">
+          <p className="text-2xl text-gray-700 dark:text-gray-300 mb-3 font-semibold">
             Preparati al meglio per l'esame Taxi/NCC
           </p>
           <p className="text-lg text-gray-600 dark:text-gray-400">
@@ -166,11 +166,11 @@ export default function PricingPage() {
                 )}
 
                 <div className="text-center mb-8 mt-4">
-                  <h2 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-accent-400 dark:to-accent-600 bg-clip-text text-transparent mb-4">
+                  <h2 className="text-4xl font-bold text-primary-900 dark:text-white mb-4">
                     {plan.name}
                   </h2>
                   <div className="mb-4">
-                    <span className="text-6xl font-bold bg-gradient-to-r from-primary-700 to-primary-900 dark:from-accent-500 dark:to-accent-700 bg-clip-text text-transparent">
+                    <span className="text-6xl font-bold text-primary-900 dark:text-accent-400">
                       {plan.price}
                     </span>
                   </div>
@@ -202,10 +202,10 @@ export default function PricingPage() {
                   href={plan.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`block w-full py-5 rounded-2xl font-bold text-lg text-center transition-all transform hover:scale-105 shadow-lg ${
+                  className={`block w-full py-5 rounded-xl font-bold text-lg text-center transition-all transform hover:scale-105 shadow-lg min-h-[60px] flex items-center justify-center ${
                     plan.highlight
-                      ? 'bg-gradient-to-r from-accent-500 via-amber-500 to-accent-600 text-white hover:shadow-2xl hover:shadow-accent-300 dark:hover:shadow-accent-900/50'
-                      : 'bg-gradient-to-r from-primary-600 to-primary-700 dark:from-accent-500 dark:to-accent-600 text-white hover:shadow-xl'
+                      ? 'btn-cta'
+                      : 'btn-primary'
                   }`}
                 >
                   Acquista Ora

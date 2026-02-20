@@ -412,32 +412,32 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
       </div>
 
       {/* Domanda */}
-      <div className="card-hover mb-6 sm:mb-8">
-        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-6 sm:mb-8 text-gray-900 dark:text-white leading-relaxed">
+      <div className="card bg-white dark:bg-dark-card p-6 sm:p-8 mb-6 sm:mb-8 shadow-card-hover">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-8 text-primary-900 dark:text-white leading-relaxed">
           {currentQuestion.question}
         </h2>
 
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-4">
           {answers.map((answer, index) => {
             const letter = String.fromCharCode(65 + index)
             const isSelected = selectedAnswer === answer
             const isCorrect = answer === currentQuestion.correct_answer
             const showCorrection = showResult
 
-            let classes = 'w-full text-left p-3 sm:p-4 md:p-5 rounded-xl border-2 transition-all duration-200 font-medium text-sm sm:text-base'
+            let cardClass = ''
             
             if (showCorrection) {
               if (isCorrect) {
-                classes += ' bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20 border-green-500 dark:border-green-400 text-green-900 dark:text-green-100 shadow-lg shadow-green-200 dark:shadow-green-900/30'
+                cardClass = 'quiz-answer-card-correct'
               } else if (isSelected && !isCorrect) {
-                classes += ' bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/20 border-red-500 dark:border-red-400 text-red-900 dark:text-red-100 shadow-lg shadow-red-200 dark:shadow-red-900/30'
+                cardClass = 'quiz-answer-card-incorrect'
               } else {
-                classes += ' bg-gray-50 dark:bg-dark-bg border-gray-200 dark:border-dark-border text-gray-500 dark:text-gray-500'
+                cardClass = 'quiz-answer-card bg-gray-50 dark:bg-dark-surface border-gray-200 dark:border-dark-border text-gray-500 dark:text-gray-500 opacity-60'
               }
             } else if (isSelected) {
-              classes += ' bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/20 border-primary-600 dark:border-accent-500 text-primary-900 dark:text-primary-100 shadow-lg shadow-primary-200 dark:shadow-primary-900/30 scale-[1.02]'
+              cardClass = 'quiz-answer-card-selected'
             } else {
-              classes += ' bg-white dark:bg-dark-bg border-gray-200 dark:border-dark-border text-gray-800 dark:text-gray-200 hover:border-primary-300 dark:hover:border-accent-600 hover:bg-gray-50 dark:hover:bg-dark-border hover:scale-[1.01] cursor-pointer'
+              cardClass = 'quiz-answer-card-default'
             }
 
             return (
@@ -445,29 +445,22 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
                 key={index}
                 onClick={() => handleAnswerSelect(answer)}
                 disabled={showResult}
-                className={classes}
-                style={{
-                  wordBreak: 'break-word',
-                  overflowWrap: 'break-word',
-                  whiteSpace: 'normal'
-                }}
+                className={cardClass}
               >
-                <div className="flex items-start gap-3">
-                  <span className="flex-shrink-0 w-8 h-8 bg-current bg-opacity-10 rounded-lg flex items-center justify-center font-bold">
-                    {letter}
-                  </span>
-                  <span className="flex-1 pt-0.5">{answer}</span>
-                  {showCorrection && isCorrect && (
-                    <svg className="flex-shrink-0 w-6 h-6 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                    </svg>
-                  )}
-                  {showCorrection && isSelected && !isCorrect && (
-                    <svg className="flex-shrink-0 w-6 h-6 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
-                    </svg>
-                  )}
-                </div>
+                <span className="flex-shrink-0 w-10 h-10 bg-current bg-opacity-10 rounded-xl flex items-center justify-center font-bold text-lg">
+                  {letter}
+                </span>
+                <span className="flex-1 text-left leading-relaxed">{answer}</span>
+                {showCorrection && isCorrect && (
+                  <svg className="flex-shrink-0 w-6 h-6 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                  </svg>
+                )}
+                {showCorrection && isSelected && !isCorrect && (
+                  <svg className="flex-shrink-0 w-6 h-6 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+                  </svg>
+                )}
               </button>
             )
           })}
@@ -525,7 +518,7 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
           <button
             onClick={handleNext}
             disabled={!selectedAnswer}
-            className={`flex-1 py-5 rounded-xl font-bold text-lg transition-all transform ${
+            className={`flex-1 py-5 rounded-xl font-bold text-lg transition-all transform min-h-[60px] ${
               selectedAnswer
                 ? 'btn-primary'
                 : 'bg-gray-200 dark:bg-dark-border text-gray-400 dark:text-gray-600 cursor-not-allowed'
@@ -536,7 +529,7 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
         ) : (
           <button
             onClick={handleContinue}
-            className="flex-1 btn-primary py-5 text-lg"
+            className="flex-1 btn-primary py-5 text-lg min-h-[60px]"
           >
             {currentIndex < questions.length - 1 ? 'Prossima Domanda →' : 'Termina Quiz'}
           </button>

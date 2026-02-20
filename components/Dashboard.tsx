@@ -128,14 +128,21 @@ export default function Dashboard() {
         
         {/* 🔵 BANNER BETA GRATUITA */}
         {isFreeBetaMode && (
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-xl shadow-lg animate-pulse">
-            <div className="flex items-center justify-center gap-3 text-center">
-              <span className="text-2xl">🎉</span>
-              <div>
-                <p className="font-bold text-lg">Beta Gratuita Attiva!</p>
-                <p className="text-sm opacity-90">Tutti i contenuti premium sono gratuiti durante il test</p>
+          <div className="relative overflow-hidden bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 text-white p-6 rounded-2xl shadow-[0_8px_30px_rgba(34,197,94,0.3)] animate-slide-up">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20"></div>
+            <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4 text-center sm:text-left">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                  <span className="text-3xl">🎉</span>
+                </div>
+                <div>
+                  <p className="font-bold text-xl sm:text-2xl">Beta Gratuita Attiva!</p>
+                  <p className="text-sm sm:text-base text-white/90 mt-1">
+                    Tutti i contenuti premium sono gratuiti durante il test
+                  </p>
+                </div>
               </div>
-              <span className="text-2xl">🚕</span>
+              <span className="text-4xl sm:text-5xl">🚕</span>
             </div>
           </div>
         )}
@@ -143,11 +150,11 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-primary-400 dark:to-primary-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-900 dark:text-white mb-2">
               Quiz Taxi/NCC
             </h1>
             <p className="text-base sm:text-lg text-gray-600 dark:text-dark-text-secondary">
-              Ciao, <span className="font-semibold text-gray-900 dark:text-dark-text-primary">
+              Ciao, <span className="font-bold text-primary-900 dark:text-dark-text-primary">
                 {user?.user_metadata?.full_name || user?.email?.split('@')[0]}
               </span>! 👋
             </p>
@@ -174,70 +181,70 @@ export default function Dashboard() {
         {activeSection === 'overview' && (
           <div className="space-y-6">
             {/* Subscription Card */}
-        <div className="card p-6 sm:p-8 animate-slide-up">
+        <div className="card shadow-card-hover animate-slide-up">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary">
+            <h2 className="text-2xl sm:text-3xl font-bold text-primary-900 dark:text-dark-text-primary">
               Il Tuo Piano
             </h2>
             {isPremium ? (
-              <div className="badge-premium">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <div className="badge-premium text-base px-4 py-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
                 Premium Attivo
               </div>
             ) : (
-              <div className="badge-free">
+              <div className="badge-free text-base px-4 py-2">
                 Versione Demo
               </div>
             )}
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark-surface dark:to-dark-hover border border-primary-200 dark:border-dark-border">
-              <div className="text-sm text-primary-700 dark:text-primary-400 font-medium mb-1">
+            <div className="p-5 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark-surface dark:to-dark-hover border-2 border-primary-200 dark:border-dark-border shadow-sm">
+              <div className="text-sm text-primary-700 dark:text-primary-400 font-semibold mb-2">
                 Domande per Quiz
               </div>
-              <div className="text-2xl font-bold text-primary-900 dark:text-primary-300">
+              <div className="text-3xl font-bold text-primary-900 dark:text-primary-300">
                 {isPremium ? '20' : '10'}
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-gradient-to-br from-accent-50 to-accent-100 dark:from-dark-surface dark:to-dark-hover border border-accent-200 dark:border-dark-border">
-              <div className="text-sm text-accent-700 dark:text-accent-400 font-medium mb-1">
+            <div className="p-5 rounded-xl bg-gradient-to-br from-accent-50 to-accent-100 dark:from-dark-surface dark:to-dark-hover border-2 border-accent-200 dark:border-dark-border shadow-sm">
+              <div className="text-sm text-accent-700 dark:text-accent-400 font-semibold mb-2">
                 Tempo Disponibile
               </div>
-              <div className="text-2xl font-bold text-accent-900 dark:text-accent-300">
+              <div className="text-3xl font-bold text-accent-900 dark:text-accent-300">
                 {isPremium ? '30 min' : '10 min'}
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 dark:from-dark-surface dark:to-dark-hover border border-green-200 dark:border-dark-border">
-              <div className="text-sm text-green-700 dark:text-green-400 font-medium mb-1">
+            <div className="p-5 rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 dark:from-dark-surface dark:to-dark-hover border-2 border-green-200 dark:border-dark-border shadow-sm">
+              <div className="text-sm text-green-700 dark:text-green-400 font-semibold mb-2">
                 Spiegazioni
               </div>
-              <div className="text-2xl font-bold text-green-900 dark:text-green-300">
+              <div className="text-3xl font-bold text-green-900 dark:text-green-300">
                 {isPremium ? '✓' : '✗'}
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-100 dark:from-dark-surface dark:to-dark-hover border border-purple-200 dark:border-dark-border">
-              <div className="text-sm text-purple-700 dark:text-purple-400 font-medium mb-1">
+            <div className="p-5 rounded-xl bg-gradient-to-br from-purple-50 to-pink-100 dark:from-dark-surface dark:to-dark-hover border-2 border-purple-200 dark:border-dark-border shadow-sm">
+              <div className="text-sm text-purple-700 dark:text-purple-400 font-semibold mb-2">
                 Filtro Categoria
               </div>
-              <div className="text-2xl font-bold text-purple-900 dark:text-purple-300">
+              <div className="text-3xl font-bold text-purple-900 dark:text-purple-300">
                 {isPremium ? '✓' : '✗'}
               </div>
             </div>
           </div>
 
           {isPremium && profile?.subscription_expires_at && (
-            <div className="mt-6 p-4 rounded-xl bg-primary-50 dark:bg-dark-surface border border-primary-200 dark:border-dark-border">
-              <div className="flex items-center gap-2 text-primary-800 dark:text-primary-300">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mt-6 p-5 rounded-xl bg-primary-50 dark:bg-dark-surface border-2 border-primary-200 dark:border-dark-border">
+              <div className="flex items-center gap-3 text-primary-800 dark:text-primary-300">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span className="text-sm font-medium">
+                <span className="text-base font-semibold">
                   Piano attivo fino al <span className="font-bold">
                     {new Date(profile.subscription_expires_at).toLocaleDateString('it-IT')}
                   </span>
@@ -248,23 +255,62 @@ export default function Dashboard() {
 
           {/* 🔵 BETA MODE: Nascondi call-to-action premium */}
           {!isPremium && !isFreeBetaMode && (
-            <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 text-white">
-              <div className="flex items-start gap-4">
-                <div className="text-4xl">🚀</div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-2">Passa al Premium!</h3>
-                  <p className="text-primary-100 mb-4">
-                    Sblocca quiz completi, più tempo, spiegazioni dettagliate e tanto altro.
+            <div className="mt-8 relative overflow-hidden">
+              {/* Background decorativo */}
+              <div className="absolute inset-0 bg-gradient-to-br from-accent-400 via-accent-500 to-accent-600 rounded-3xl"></div>
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
+              
+              {/* Contenuto */}
+              <div className="relative p-8 sm:p-10">
+                <div className="flex flex-col items-center text-center">
+                  {/* Icona principale */}
+                  <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                    <span className="text-5xl">🚀</span>
+                  </div>
+                  
+                  {/* Testo */}
+                  <h3 className="text-3xl sm:text-4xl font-bold text-primary-900 mb-3">
+                    Passa al Premium!
+                  </h3>
+                  <p className="text-lg text-primary-800 mb-8 max-w-md leading-relaxed">
+                    Sblocca quiz completi da <strong>20 domande</strong>, più tempo, spiegazioni dettagliate e tanto altro.
                   </p>
+                  
+                  {/* Features highlights */}
+                  <div className="grid grid-cols-2 gap-4 mb-8 w-full max-w-lg">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-primary-900">
+                      <div className="text-3xl mb-2">✓</div>
+                      <div className="font-semibold">20 Domande</div>
+                    </div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-primary-900">
+                      <div className="text-3xl mb-2">✓</div>
+                      <div className="font-semibold">30 Minuti</div>
+                    </div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-primary-900">
+                      <div className="text-3xl mb-2">✓</div>
+                      <div className="font-semibold">Spiegazioni</div>
+                    </div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 text-primary-900">
+                      <div className="text-3xl mb-2">✓</div>
+                      <div className="font-semibold">Categorie</div>
+                    </div>
+                  </div>
+                  
+                  {/* CTA Button - SUPER PROMINENTE */}
                   <Link
                     href="/pricing"
-                    className="inline-flex items-center gap-2 bg-white text-primary-600 px-6 py-3 rounded-xl font-semibold hover:bg-primary-50 transition-all hover:scale-105"
+                    className="btn-cta inline-flex items-center gap-3 shadow-[0_10px_40px_rgba(251,191,36,0.5)] animate-pulse hover:animate-none"
                   >
-                    Scopri i Piani
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <span className="text-2xl">⭐</span>
+                    <span>Scopri i Piani Premium</span>
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
                     </svg>
                   </Link>
+                  
+                  <p className="mt-4 text-sm text-primary-800/80">
+                    💳 Pagamento sicuro con Stripe • Attivazione istantanea
+                  </p>
                 </div>
               </div>
             </div>
@@ -273,26 +319,26 @@ export default function Dashboard() {
 
         {/* Redeem Code Card - Solo per utenti free E NON in beta mode */}
         {!isPremium && !isFreeBetaMode && (
-          <div className="card p-4 sm:p-6 bg-gradient-to-br from-purple-50/50 via-white to-pink-50/50 dark:from-dark-card dark:via-dark-card dark:to-dark-hover border-purple-100 dark:border-purple-900/20">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-              <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl sm:text-2xl">
+          <div className="card bg-gradient-to-br from-purple-50/80 via-white to-pink-50/80 dark:from-dark-card dark:via-dark-card dark:to-dark-hover border-2 border-purple-200 dark:border-purple-900/30 shadow-card">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+              <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-3xl shadow-lg">
                 🎟️
               </div>
               <div className="flex-1">
-                <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-dark-text-primary mb-1">
+                <h3 className="text-lg sm:text-xl font-bold text-primary-900 dark:text-dark-text-primary mb-2">
                   Hai un Codice Accesso?
                 </h3>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-dark-text-secondary">
+                <p className="text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary">
                   Attiva il tuo codice per sbloccare l'accesso premium
                 </p>
               </div>
               <Link
                 href="/redeem"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl text-sm font-semibold hover:shadow-lg hover:scale-105 transition-all whitespace-nowrap"
+                className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-xl text-base font-bold hover:shadow-[0_6px_25px_rgba(168,85,247,0.4)] hover:scale-105 transition-all whitespace-nowrap"
               >
-                Attiva
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                Attiva Codice
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                 </svg>
               </Link>
             </div>
