@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getQuizHistory, QuizResult } from '@/lib/supabase'
 import Link from 'next/link'
+import { BarChart3, TrendingUp, Target, Trophy } from 'lucide-react'
 
 interface StatisticsChartProps {
   plan?: 'free' | 'premium'
@@ -58,8 +59,9 @@ export default function StatisticsChart({ plan = 'free' }: StatisticsChartProps)
       <div className="card relative overflow-hidden">
         {/* Badge Premium */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-accent-400 dark:to-accent-600 bg-clip-text text-transparent">
-            📊 Statistiche Dettagliate
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-accent-400 dark:to-accent-600 bg-clip-text text-transparent flex items-center gap-2">
+            <BarChart3 className="w-7 h-7 text-primary-600 dark:text-accent-400" />
+            Statistiche Dettagliate
           </h2>
           <span className="badge-premium">
             🔒 PREMIUM
@@ -106,12 +108,13 @@ export default function StatisticsChart({ plan = 'free' }: StatisticsChartProps)
   if (totalQuizzes === 0) {
     return (
       <div className="card">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-accent-400 dark:to-accent-600 bg-clip-text text-transparent mb-8">
-          📊 Statistiche Dettagliate
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-accent-400 dark:to-accent-600 bg-clip-text text-transparent mb-8 flex items-center gap-2">
+          <BarChart3 className="w-7 h-7 text-primary-600 dark:text-accent-400" />
+          Statistiche Dettagliate
         </h2>
         <div className="text-center py-16">
           <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <span className="text-4xl">📈</span>
+            <TrendingUp className="w-12 h-12 text-gray-400" />
           </div>
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
             Completa alcuni quiz per vedere le statistiche
@@ -126,8 +129,9 @@ export default function StatisticsChart({ plan = 'free' }: StatisticsChartProps)
 
   return (
     <div className="card">
-      <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-accent-400 dark:to-accent-600 bg-clip-text text-transparent mb-8">
-        📊 Statistiche Dettagliate
+      <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-accent-400 dark:to-accent-600 bg-clip-text text-transparent mb-8 flex items-center gap-2">
+        <BarChart3 className="w-7 h-7 text-primary-600 dark:text-accent-400" />
+        Statistiche Dettagliate
       </h2>
       
       {/* Metriche Chiave */}
@@ -155,7 +159,9 @@ export default function StatisticsChart({ plan = 'free' }: StatisticsChartProps)
       {/* Grafico a Barre */}
       <div className="mb-8">
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-          <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 dark:from-accent-400 dark:to-accent-600 rounded-lg flex items-center justify-center text-white text-sm">📈</span>
+          <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 dark:from-accent-400 dark:to-accent-600 rounded-lg flex items-center justify-center text-white text-sm">
+            <TrendingUp className="w-5 h-5" />
+          </span>
           Andamento Ultimi Quiz
         </h3>
         <div className="space-y-3">
@@ -191,7 +197,9 @@ export default function StatisticsChart({ plan = 'free' }: StatisticsChartProps)
       {/* Analisi Prestazioni */}
       <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-2xl p-8 border border-blue-200 dark:border-blue-700">
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 dark:from-accent-400 dark:to-accent-600 rounded-lg flex items-center justify-center text-white text-sm">🎯</span>
+          <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 dark:from-accent-400 dark:to-accent-600 rounded-lg flex items-center justify-center text-white text-sm">
+            <Target className="w-5 h-5" />
+          </span>
           Analisi Prestazioni
         </h3>
         <div className="space-y-3 text-sm">
@@ -249,7 +257,7 @@ export default function StatisticsChart({ plan = 'free' }: StatisticsChartProps)
           
           {passRate === 100 && totalQuizzes >= 5 && (
             <div className="flex items-start gap-3 bg-gradient-to-r from-yellow-100 to-amber-100 dark:from-yellow-900/30 dark:to-amber-900/30 p-4 rounded-xl border-2 border-yellow-400 dark:border-yellow-600">
-              <span className="text-2xl flex-shrink-0">🏆</span>
+              <Trophy className="w-7 h-7 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
               <p className="text-yellow-900 dark:text-yellow-200 font-bold">
                 Perfetto! Hai superato tutti i quiz. Sei pronto per l'esame!
               </p>

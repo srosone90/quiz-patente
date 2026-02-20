@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, Question, saveQuizResult, saveQuizAnswers, getQuestionsByCategory, getWrongAnswers, checkAndUnlockAchievements } from '@/lib/supabase'
 import { useWakeLock } from '@/hooks/useWakeLock'
-import { RotateCcw, Folder, FileEdit, Lightbulb } from 'lucide-react'
+import { RotateCcw, Folder, FileEdit, Lightbulb, PartyPopper, BookOpen } from 'lucide-react'
 
 interface QuizEngineProps {
   plan?: 'free' | 'premium'
@@ -243,7 +243,9 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
   if (mode === 'review' && questions.length === 0) {
     return (
       <div className="card text-center py-16">
-        <div className="text-6xl mb-6">🎉</div>
+        <div className="flex justify-center mb-6">
+          <PartyPopper className="w-24 h-24 text-primary-600 dark:text-accent-400" />
+        </div>
         <h2 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 dark:from-accent-400 dark:to-accent-600 bg-clip-text text-transparent mb-4">
           Complimenti!
         </h2>
@@ -264,8 +266,12 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
     return (
       <div className="max-w-2xl mx-auto">
         <div className="card text-center py-12 animate-fadeIn">
-          <div className="text-7xl mb-6">
-            {hasPassed ? '🎉' : '📚'}
+          <div className="flex justify-center mb-6">
+            {hasPassed ? (
+              <PartyPopper className="w-28 h-28 text-green-500" />
+            ) : (
+              <BookOpen className="w-28 h-28 text-primary-600 dark:text-accent-400" />
+            )}
           </div>
           
           <h2 className="text-4xl font-bold mb-4">
