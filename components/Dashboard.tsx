@@ -23,7 +23,9 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [quizHistory, setQuizHistory] = useState<QuizResult[]>([])
-  const [loading, setLoading] = useState(true)  const [error, setError] = useState<string | null>(null)  const [activeSection, setActiveSection] = useState('overview')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [activeSection, setActiveSection] = useState('overview')
   const router = useRouter()
 
   useEffect(() => {
