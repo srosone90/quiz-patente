@@ -83,16 +83,6 @@ export async function signIn(email: string, password: string) {
   return { data, error }
 }
 
-export async function signInWithOAuth(provider: 'google' | 'facebook' | 'github') {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo: `${window.location.origin}/`,
-    },
-  })
-  return { data, error }
-}
-
 export async function signOut() {
   const { error } = await supabase.auth.signOut()
   return { error }
