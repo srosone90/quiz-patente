@@ -12,6 +12,7 @@ interface StatisticsChartProps {
 export default function StatisticsChart({ plan = 'free' }: StatisticsChartProps) {
   const [quizHistory, setQuizHistory] = useState<QuizResult[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadStatistics()
@@ -21,8 +22,10 @@ export default function StatisticsChart({ plan = 'free' }: StatisticsChartProps)
     try {
       const { data } = await getQuizHistory()
       setQuizHistory(data || [])
+      setError(null)
     } catch (error) {
       console.error('Errore caricamento statistiche:', error)
+      setError('Impossibile caricare le statistiche')
     } finally {
       setLoading(false)
     }
@@ -100,6 +103,24 @@ export default function StatisticsChart({ plan = 'free' }: StatisticsChartProps)
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 dark:border-accent-500 mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">Caricamento statistiche...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="card">
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+          <button onClick={() => { setError(null); setLoading(true); loadStatistics(); }} className="btn-primary text-sm">
+            Riprova
+          </button>
         </div>
       </div>
     )

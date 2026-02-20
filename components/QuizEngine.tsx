@@ -31,6 +31,7 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
   const [showResult, setShowResult] = useState(false)
   const [quizFinished, setQuizFinished] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [canProceed, setCanProceed] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(0)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -139,9 +140,11 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
       }
 
       setQuestions(fetchedQuestions)
+      setError(null)
       setLoading(false)
     } catch (error) {
       console.error('Errore nel caricamento domande:', error)
+      setError('Impossibile caricare le domande. Verifica la connessione internet.')
       setLoading(false)
     }
   }
@@ -236,6 +239,34 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
       <div className="text-center py-20">
         <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 dark:border-accent-500 mx-auto"></div>
         <p className="mt-4 text-gray-600 dark:text-gray-400">Caricamento domande...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="card text-center py-16">
+        <div className="w-20 h-20 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-10 h-10 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+          Errore di Caricamento
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          {error}
+        </p>
+        <button
+          onClick={() => {
+            setError(null)
+            setLoading(true)
+            loadQuestions()
+          }}
+          className="btn-primary"
+        >
+          Riprova
+        </button>
       </div>
     )
   }

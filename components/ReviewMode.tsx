@@ -12,6 +12,7 @@ interface ReviewModeProps {
 export default function ReviewMode({ isPremium }: ReviewModeProps) {
   const [wrongCount, setWrongCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadWrongAnswers()
@@ -44,8 +45,10 @@ export default function ReviewMode({ isPremium }: ReviewModeProps) {
       const { data } = await getWrongAnswers(100)
       const uniqueQuestions = new Set(data?.map(d => d.question_id))
       setWrongCount(uniqueQuestions.size)
+      setError(null)
     } catch (error) {
       console.error('Errore caricamento errori:', error)
+      setError('Impossibile caricare gli errori da ripassare')
     } finally {
       setLoading(false)
     }
@@ -56,6 +59,42 @@ export default function ReviewMode({ isPremium }: ReviewModeProps) {
       <div className="card p-6 animate-pulse">
         <div className="h-6 bg-gray-200 dark:bg-dark-border rounded-lg w-2/3 mb-4"></div>
         <div className="h-20 bg-gray-200 dark:bg-dark-border rounded-lg"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="card p-6 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30">
+        <div className="flex items-start gap-3">
+          <svg className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <p className="text-red-800 dark:text-red-200 font-medium mb-2">{error}</p>
+            <button onClick={() => { setError(null); setLoading(true); loadWrongAnswers(); }} className="text-sm text-red-600 dark:text-red-400 hover:underline">
+              Riprova
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="card p-6 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30">
+        <div className="flex items-start gap-3">
+          <svg className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <p className="text-red-800 dark:text-red-200 font-medium mb-2">{error}</p>
+            <button onClick={() => { setError(null); setLoading(true); loadWrongCount(); }} className="text-sm text-red-600 dark:text-red-400 hover:underline">
+              Riprova
+            </button>
+          </div>
+        </div>
       </div>
     )
   }

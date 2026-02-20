@@ -19,6 +19,7 @@ export default function GamificationProgress() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getCurrentUser();
@@ -40,16 +41,23 @@ export default function GamificationProgress() {
   const loadGamificationData = async () => {
     if (!userId) return;
     setLoading(true);
-    const [progressData, allAchievements, unlockedAchievements] = await Promise.all([
-      getUserProgress(userId),
-      getAchievements(),
-      getUserAchievements(userId)
-    ]);
+    try {
+      const [progressData, allAchievements, unlockedAchievements] = await Promise.all([
+        getUserProgress(userId),
+        getAchievements(),
+        getUserAchievements(userId)
+      ]);
 
-    setProgress(progressData);
-    setAchievements(allAchievements);
-    setUserAchievements(unlockedAchievements);
-    setLoading(false);
+      setProgress(progressData);
+      setAchievements(allAchievements);
+      setUserAchievements(unlockedAchievements);
+      setError(null);
+    } catch (error) {
+      console.error('Errore caricamento progressi:', error);
+      setError('Impossibile caricare i progressi');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -57,6 +65,22 @@ export default function GamificationProgress() {
       <div className="animate-pulse space-y-4">
         <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
         <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="card text-center py-12">
+        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+        <button onClick={() => { setError(null); loadGamificationData(); }} className="btn-primary text-sm">
+          Riprova
+        </button>
       </div>
     );
   }

@@ -23,8 +23,7 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [quizHistory, setQuizHistory] = useState<QuizResult[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeSection, setActiveSection] = useState('overview')
+  const [loading, setLoading] = useState(true)  const [error, setError] = useState<string | null>(null)  const [activeSection, setActiveSection] = useState('overview')
   const router = useRouter()
 
   useEffect(() => {
@@ -68,8 +67,10 @@ export default function Dashboard() {
       
       const { data: historyData } = await getQuizHistory()
       setQuizHistory(historyData || [])
+      setError(null)
     } catch (error) {
       console.error('Errore caricamento dati:', error)
+      setError('Impossibile caricare i dati. Verifica la connessione internet.')
     } finally {
       setLoading(false)
     }
@@ -92,6 +93,32 @@ export default function Dashboard() {
           <p className="text-gray-600 dark:text-dark-text-secondary font-medium">
             Caricamento...
           </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="card max-w-md w-full text-center p-8">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Errore di Caricamento</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+          <button
+            onClick={() => {
+              setError(null)
+              setLoading(true)
+              loadData()
+            }}
+            className="btn-primary"
+          >
+            Riprova
+          </button>
         </div>
       </div>
     )
