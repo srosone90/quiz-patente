@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { getCurrentUser, getQuizHistory, getUserProfile, signOut, QuizResult } from '@/lib/supabase'
+import { getCurrentUser, getQuizHistory, getUserProfile, signOut, isAdmin, QuizResult } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Home, Trophy, Users, User, Gift, Calendar, Target, RotateCcw, BarChart3, TrendingUp, Map, FileText, FileEdit, Rocket, Star, PartyPopper, Lightbulb, Ticket, CreditCard, Clock } from 'lucide-react'
 import CategorySelector from './CategorySelector'
@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState('overview')
+  const [isAdminUser, setIsAdminUser] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -69,6 +70,11 @@ export default function Dashboard() {
       
       const { data: historyData } = await getQuizHistory()
       setQuizHistory(historyData || [])
+      
+      // Verifica se l'utente è admin
+      const adminCheck = await isAdmin()
+      setIsAdminUser(adminCheck)
+      
       setError(null)
     } catch (error) {
       console.error('Errore caricamento dati:', error)
@@ -157,7 +163,36 @@ export default function Dashboard() {
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
         
-        {/* 🔵 BANNER BETA GRATUITA */}
+        {/* � BADGE ADMIN - Accesso rapido al pannello amministratore */}
+        {isAdminUser && (
+          <Link
+            href="/admin"
+            className="group block overflow-hidden bg-gradient-to-r from-purple-600 via-violet-600 to-purple-700 text-white p-5 rounded-2xl shadow-[0_8px_30px_rgba(139,92,246,0.4)] hover:shadow-[0_8px_40px_rgba(139,92,246,0.6)] transition-all duration-300 hover:scale-[1.02] cursor-pointer animate-slide-up"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform">
+                  <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-bold text-xl flex items-center gap-2">
+                    👑 Pannello Amministratore
+                  </p>
+                  <p className="text-sm text-white/90 mt-0.5">
+                    Gestisci utenti, visualizza statistiche globali e codici accesso
+                  </p>
+                </div>
+              </div>
+              <svg className="w-6 h-6 text-white/80 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </Link>
+        )}
+        
+        {/* �🔵 BANNER BETA GRATUITA */}
         {isFreeBetaMode && (
           <div className="relative overflow-hidden bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 text-white p-6 rounded-2xl shadow-[0_8px_30px_rgba(34,197,94,0.3)] animate-slide-up">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20"></div>
