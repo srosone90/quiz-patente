@@ -81,24 +81,6 @@ export default function ReviewMode({ isPremium }: ReviewModeProps) {
     )
   }
 
-  if (error) {
-    return (
-      <div className="card p-6 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30">
-        <div className="flex items-start gap-3">
-          <svg className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div className="flex-1">
-            <p className="text-red-800 dark:text-red-200 font-medium mb-2">{error}</p>
-            <button onClick={() => { setError(null); setLoading(true); loadWrongCount(); }} className="text-sm text-red-600 dark:text-red-400 hover:underline">
-              Riprova
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   if (wrongCount === 0) {
     return (
       <div className="card p-6 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-dark-card dark:via-dark-hover dark:to-dark-surface border-green-200 dark:border-green-900/30">
