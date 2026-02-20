@@ -66,11 +66,6 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION sync_user_profile_email();
 
-DO $$ 
-BEGIN
-  RAISE NOTICE '✅ Email sync trigger created';
-END $$;
-
 -- ===========================================
 -- PART 2: CLEANUP - DROP DEPRECATED COLUMNS
 -- ===========================================
@@ -103,11 +98,6 @@ SELECT
   (SELECT COALESCE(ROUND(AVG(score_percentage), 1), 0) FROM quiz_results) as avg_score,
   (SELECT COUNT(*) FROM access_codes WHERE is_active = true) as active_codes,
   (SELECT COUNT(*) FROM code_redemptions) as total_redemptions;
-
-DO $$ 
-BEGIN
-  RAISE NOTICE '✅ Created admin_global_stats view';
-END $$;
 
 -- Create admin_question_stats view (if questions table exists)
 DO $$
@@ -159,11 +149,6 @@ ON quiz_results(created_at DESC);
 -- Index on user_profiles.role for admin queries
 CREATE INDEX IF NOT EXISTS idx_user_profiles_role 
 ON user_profiles(role);
-
-DO $$ 
-BEGIN
-  RAISE NOTICE '✅ Performance indexes created';
-END $$;
 
 -- ===========================================
 -- PART 5: DATA INTEGRITY CONSTRAINTS
@@ -231,11 +216,6 @@ ALTER TABLE user_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE quiz_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE access_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE code_redemptions ENABLE ROW LEVEL SECURITY;
-
-DO $$ 
-BEGIN
-  RAISE NOTICE '✅ RLS enabled on all tables';
-END $$;
 
 -- ===========================================
 -- PART 7: VERIFICATION QUERIES
