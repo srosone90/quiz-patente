@@ -158,8 +158,8 @@ INSERT INTO user_progress (
 )
 SELECT 
   qr.user_id,
-  COALESCE(SUM(qr.correct_answers * 10), 0) as total_xp,
-  calculate_level(COALESCE(SUM(qr.correct_answers * 10), 0)) as level,
+  COALESCE(SUM(qr.correct_answers * 10), 0)::INTEGER as total_xp,
+  calculate_level(COALESCE(SUM(qr.correct_answers * 10), 0)::INTEGER) as level,
   COUNT(qr.id) as total_quizzes,
   COALESCE(SUM(qr.total_questions), 0) as total_q,
   COALESCE(SUM(qr.correct_answers), 0) as correct,
