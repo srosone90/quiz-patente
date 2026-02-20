@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, Question, saveQuizResult, saveQuizAnswers, getQuestionsByCategory, getWrongAnswers, checkAndUnlockAchievements } from '@/lib/supabase'
 import { useWakeLock } from '@/hooks/useWakeLock'
+import { RotateCcw, Folder, FileEdit, Lightbulb } from 'lucide-react'
 
 interface QuizEngineProps {
   plan?: 'free' | 'premium'
@@ -360,9 +361,13 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-primary-500 to-primary-700 dark:from-accent-400 dark:to-accent-600 rounded-xl flex items-center justify-center">
-              <span className="text-white text-lg sm:text-xl">
-                {mode === 'review' ? '🔄' : category ? '📂' : '📝'}
-              </span>
+              {mode === 'review' ? (
+                <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              ) : category ? (
+                <Folder className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              ) : (
+                <FileEdit className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              )}
             </div>
             <span className="text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300">
               {mode === 'review' ? 'Modalità Ripasso' : category ? `Categoria: ${category}` : 'Quiz Completo'}
@@ -473,7 +478,7 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-l-4 border-blue-500 dark:border-blue-400 p-6 rounded-r-2xl">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-                    <span className="text-white text-xl">💡</span>
+                    <Lightbulb className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-blue-900 dark:text-blue-300 mb-3 text-lg">

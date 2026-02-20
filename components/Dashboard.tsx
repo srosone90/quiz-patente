@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getCurrentUser, getQuizHistory, getUserProfile, signOut, QuizResult } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { Home, Trophy, Users, User, Gift, Calendar, Target, RotateCcw, BarChart3, TrendingUp, Map, FileText, FileEdit, Rocket, Star, PartyPopper, Lightbulb, Ticket } from 'lucide-react'
+import { Home, Trophy, Users, User, Gift, Calendar, Target, RotateCcw, BarChart3, TrendingUp, Map, FileText, FileEdit, Rocket, Star, PartyPopper, Lightbulb, Ticket, CreditCard, Clock } from 'lucide-react'
 import CategorySelector from './CategorySelector'
 import ReviewMode from './ReviewMode'
 import StatisticsChart from './StatisticsChart'
@@ -294,8 +294,9 @@ export default function Dashboard() {
                       </svg>
                     </Link>
                     
-                    <p className="text-sm text-primary-800/80">
-                      💳 Pagamento sicuro con Stripe • Attivazione istantanea
+                    <p className="text-sm text-primary-800/80 flex items-center justify-center lg:justify-start gap-2">
+                      <CreditCard className="w-4 h-4" />
+                      Pagamento sicuro con Stripe • Attivazione istantanea
                     </p>
                   </div>
                   
@@ -307,7 +308,7 @@ export default function Dashboard() {
                       <div className="text-sm opacity-90">Quiz completi</div>
                     </div>
                     <div className="bg-white/20 backdrop-blur-sm rounded-xl p-5 text-primary-900 hover:bg-white/30 transition-all">
-                      <div className="mb-3"><Calendar className="w-10 h-10" /></div>
+                      <div className="mb-3"><Clock className="w-10 h-10" /></div>
                       <div className="font-bold text-xl mb-1">30 Minuti</div>
                       <div className="text-sm opacity-90">Tempo extra</div>
                     </div>
@@ -485,7 +486,9 @@ export default function Dashboard() {
                   href={`/quiz?plan=${isPremium ? 'premium' : 'free'}`}
                   className="group card-hover p-6 flex flex-col items-center text-center bg-gradient-to-br from-primary-600 to-primary-700 text-white border-none"
                 >
-                  <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">📝</div>
+                  <div className="mb-3 group-hover:scale-110 transition-transform">
+                    <FileEdit className="w-12 h-12" />
+                  </div>
                   <h3 className="text-xl font-bold mb-2">
                     Quiz Completo
                   </h3>
@@ -517,8 +520,9 @@ export default function Dashboard() {
 
               {!isPremium && (
                 <div className="bg-gradient-to-r from-primary-50 to-accent-50 dark:from-primary-900/20 dark:to-accent-900/20 rounded-xl p-4 border border-primary-200 dark:border-primary-800">
-                  <p className="text-sm text-primary-800 dark:text-primary-200">
-                    💡 <strong>Suggerimento:</strong> Con il piano Premium puoi allenarti su categorie specifiche per migliorare le tue aree deboli!
+                  <p className="text-sm text-primary-800 dark:text-primary-200 flex items-start gap-2">
+                    <Lightbulb className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <span><strong>Suggerimento:</strong> Con il piano Premium puoi allenarti su categorie specifiche per migliorare le tue aree deboli!</span>
                   </p>
                 </div>
               )}
@@ -552,13 +556,16 @@ export default function Dashboard() {
         {/* Sezione Storico */}
         {activeSection === 'history' && (
           <div className="card p-6 sm:p-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-6">
-              📝 Storico Simulazioni
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-6 flex items-center gap-3">
+              <FileEdit className="w-6 h-6 text-primary-600" />
+              Storico Simulazioni
             </h2>
           
           {quizHistory.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">📊</div>
+              <div className="mb-4 flex justify-center">
+                <BarChart3 className="w-20 h-20 text-gray-400 dark:text-gray-600" />
+              </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">
                 Nessuna simulazione completata
               </h3>
@@ -567,9 +574,10 @@ export default function Dashboard() {
               </p>
               <button
                 onClick={() => setActiveSection('quiz')}
-                className="btn-primary inline-block"
+                className="btn-primary inline-flex items-center gap-2"
               >
-                🎯 Inizia Ora
+                <Target className="w-5 h-5" />
+                Inizia Ora
               </button>
             </div>
           ) : (

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getWrongAnswers } from '@/lib/supabase'
+import { PartyPopper, RotateCcw } from 'lucide-react'
 
 interface ReviewModeProps {
   isPremium: boolean
@@ -63,8 +64,8 @@ export default function ReviewMode({ isPremium }: ReviewModeProps) {
     return (
       <div className="card p-6 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-dark-card dark:via-dark-hover dark:to-dark-surface border-green-200 dark:border-green-900/30">
         <div className="flex items-center gap-4">
-          <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-4xl shadow-lg">
-            🎉
+          <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
+            <PartyPopper className="w-9 h-9 text-white" />
           </div>
           <div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-dark-text-primary mb-1">
@@ -85,8 +86,8 @@ export default function ReviewMode({ isPremium }: ReviewModeProps) {
   return (
     <div className="card p-6 bg-gradient-to-br from-red-50 via-orange-50 to-amber-50 dark:from-dark-card dark:via-dark-hover dark:to-dark-surface border-red-200 dark:border-red-900/30">
       <div className="flex flex-col sm:flex-row items-start gap-6">
-        <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-4xl shadow-lg">
-          🔄
+        <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center shadow-lg">
+          <RotateCcw className="w-9 h-9 text-white" />
         </div>
         
         <div className="flex-1">
