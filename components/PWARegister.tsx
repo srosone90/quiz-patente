@@ -19,23 +19,33 @@ export default function PWARegister() {
         })
     }
 
+    // Verifica se l'app è già installata
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('✅ App già installata')
+      return
+    }
+
+    // Controlla localStorage PRIMA di mostrare il banner
+    const dismissedTime = localStorage.getItem('pwaInstallDismissed')
+    if (dismissedTime) {
+      const daysSinceDismissed = (Date.now() - parseInt(dismissedTime)) / (1000 * 60 * 60 * 24)
+      if (daysSinceDismissed < 30) { // 30 giorni invece di 7
+        console.log(`⏳ Banner PWA nascosto per altri ${Math.ceil(30 - daysSinceDismissed)} giorni`)
+        return
+      }
+    }
+
     // Gestisce l'evento beforeinstallprompt per l'installazione PWA
     const handleBeforeInstallPrompt = (e: Event) => {
       // Previene il prompt automatico di Chrome
       e.preventDefault()
       // Salva l'evento per usarlo più tardi
       setDeferredPrompt(e)
-      // Mostra il nostro banner di installazione personalizzato
+      // Mostra il nostro banner di installazione personalizzato SOLO se non è stato chiuso recentemente
       setShowInstallPrompt(true)
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-
-    // Verifica se l'app è già installata
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log('✅ App già installata')
-      setShowInstallPrompt(false)
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -61,20 +71,10 @@ export default function PWARegister() {
 
   const handleDismiss = () => {
     setShowInstallPrompt(false)
-    // Salva in localStorage per non mostrarlo più per un po'
+    // Salva in localStorage per non mostrarlo più per 30 giorni
     localStorage.setItem('pwaInstallDismissed', Date.now().toString())
+    console.log('✋ Banner PWA nascosto per 30 giorni')
   }
-
-  // Non mostrare il banner se è stato chiuso nelle ultime 7 giorni
-  useEffect(() => {
-    const dismissedTime = localStorage.getItem('pwaInstallDismissed')
-    if (dismissedTime) {
-      const daysSinceDismissed = (Date.now() - parseInt(dismissedTime)) / (1000 * 60 * 60 * 24)
-      if (daysSinceDismissed < 7) {
-        setShowInstallPrompt(false)
-      }
-    }
-  }, [])
 
   if (!showInstallPrompt) {
     return null
