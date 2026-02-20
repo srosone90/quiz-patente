@@ -32,7 +32,7 @@ async function verifyAdmin(request: NextRequest) {
   const { data: profile } = await supabaseAdmin
     .from('user_profiles')
     .select('role')
-    .eq('user_id', user.id)
+    .eq('id', user.id)
     .single()
 
   return profile?.role === 'admin'
@@ -65,7 +65,7 @@ export async function PATCH(request: NextRequest) {
     const { data, error } = await supabaseAdmin
       .from('user_profiles')
       .update(updates)
-      .eq('user_id', userId)
+      .eq('id', userId)
       .select()
       .single()
 
@@ -113,7 +113,7 @@ export async function DELETE(request: NextRequest) {
     const { error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .delete()
-      .eq('user_id', userId)
+      .eq('id', userId)
 
     if (profileError) throw profileError
 
