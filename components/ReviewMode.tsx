@@ -14,6 +14,28 @@ export default function ReviewMode({ isPremium }: ReviewModeProps) {
 
   useEffect(() => {
     loadWrongAnswers()
+    
+    // Listener per aggiornare quando viene completato un quiz
+    const handleQuizCompleted = () => {
+      console.log('✅ Quiz completato, ricarico errori da ripassare...')
+      loadWrongAnswers()
+    }
+    
+    // Listener per aggiornare quando la tab diventa visibile
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('🔄 Tab visibile, ricarico errori da ripassare...')
+        loadWrongAnswers()
+      }
+    }
+    
+    window.addEventListener('quizCompleted', handleQuizCompleted)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      window.removeEventListener('quizCompleted', handleQuizCompleted)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [])
 
   const loadWrongAnswers = async () => {
