@@ -114,7 +114,8 @@ export default function Dashboard() {
     { id: 'heatmap', label: 'Heatmap', icon: '🗺️', description: 'Categorie' },
     { id: 'pdf', label: 'Esporta PDF', icon: '📄', description: 'Download report' },
     { id: 'history', label: 'Storico', icon: '📝', description: 'Quiz completati' },
-    { id: 'language', label: 'Lingua', icon: '🌐', description: 'Cambia lingua' }
+    // TODO: Riabilitare quando implementeremo le traduzioni complete
+    // { id: 'language', label: 'Lingua', icon: '🌐', description: 'Cambia lingua' }
   ]
 
   // 🔵 BETA MODE: Nascondi referral system
@@ -436,12 +437,13 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* TODO: Riabilitare quando implementeremo le traduzioni complete */}
         {/* Sezione Lingua */}
-        {activeSection === 'language' && (
+        {/* {activeSection === 'language' && (
           <div className="space-y-6">
             <LanguageSwitcher />
           </div>
-        )}
+        )} */}
 
         {/* Sezione Classifica */}
         {activeSection === 'leaderboard' && (
