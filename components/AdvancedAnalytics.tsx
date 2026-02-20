@@ -85,13 +85,13 @@ export default function AdvancedAnalytics() {
       // Quiz stats
       const { data: quizData } = await supabase
         .from('quiz_results')
-        .select('score, passed, created_at')
+        .select('score_percentage, created_at')
         .gte('created_at', rangeDate.toISOString())
 
       const totalQuizzes = quizData?.length || 0
-      const passedQuizzes = quizData?.filter(q => q.passed).length || 0
+      const passedQuizzes = quizData?.filter(q => q.score_percentage >= 80).length || 0
       const avgScore = (quizData && quizData.length > 0) 
-        ? quizData.reduce((acc, q) => acc + (q.score || 0), 0) / totalQuizzes
+        ? quizData.reduce((acc, q) => acc + (q.score_percentage || 0), 0) / totalQuizzes
         : 0
       const passRate = totalQuizzes > 0 ? (passedQuizzes / totalQuizzes) * 100 : 0
 
@@ -119,7 +119,7 @@ export default function AdvancedAnalytics() {
           categoryStats[cat] = { count: 0, passed: 0 }
         }
         categoryStats[cat].count++
-        if (q.passed) categoryStats[cat].passed++
+        if (q.score_percentage >= 80) categoryStats[cat].passed++
       })
 
       const topCategories = Object.entries(categoryStats)
@@ -157,7 +157,7 @@ export default function AdvancedAnalytics() {
           quizActivityMap[date] = { total: 0, passed: 0 }
         }
         quizActivityMap[date].total++
-        if (quiz.passed) quizActivityMap[date].passed++
+        if (quiz.score_percentage >= 80) quizActivityMap[date].passed++
       })
 
       const quizActivity = Object.entries(quizActivityMap).map(([date, stats]) => ({
