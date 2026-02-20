@@ -12,10 +12,11 @@ SELECT
     up.full_name,
     up.subscription_type,
     up.role as ruolo_attuale,
-    up.total_xp,
-    up.level
+    prog.total_xp,
+    prog.level
 FROM user_profiles up
 JOIN auth.users au ON au.id = up.id
+LEFT JOIN user_progress prog ON prog.user_id = up.id
 WHERE au.email = 'srosone90@gmail.com';
 
 -- STEP 2: Imposta ruolo ADMIN
@@ -30,10 +31,11 @@ SELECT
     up.full_name,
     up.subscription_type,
     up.role as ruolo_aggiornato,
-    up.total_xp,
-    up.level
+    prog.total_xp,
+    prog.level
 FROM user_profiles up
 JOIN auth.users au ON au.id = up.id
+LEFT JOIN user_progress prog ON prog.user_id = up.id
 WHERE au.email = 'srosone90@gmail.com';
 
 -- STEP 4: Verifica policies attive
