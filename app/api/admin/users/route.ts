@@ -1,23 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Service role client per operazioni admin
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
+// Crea client Supabase admin solo quando necessario
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
+  
+  return createClient(supabaseUrl, supabaseKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
     }
-  }
-)
+  })
+}
 
 // Verifica che l'utente che fa la richiesta sia admin
 async function verifyAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   if (!authHeader) return false
 
+  const supabaseAdmin = getSupabaseAdmin()
   const token = authHeader.replace('Bearer ', '')
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   
@@ -52,6 +58,8 @@ export async function PATCH(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const supabaseAdmin = getSupabaseAdmin()
 
     // Aggiorna user_profiles
     const { data, error } = await supabaseAdmin
@@ -98,6 +106,8 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const supabaseAdmin = getSupabaseAdmin()
 
     // Elimina il profilo (le politiche CASCADE elimineranno anche i dati correlati)
     const { error: profileError } = await supabaseAdmin
