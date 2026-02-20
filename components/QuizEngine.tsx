@@ -32,6 +32,7 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
   const [quizFinished, setQuizFinished] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [canProceed, setCanProceed] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(0)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -195,13 +196,17 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
 
   async function finishQuiz() {
     setQuizFinished(true)
+    setSaveError(null)
     
     // Rilascia Wake Lock
     releaseWakeLock()
     
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        setSaveError('Utente non autenticato. I risultati non sono stati salvati.')
+        return
+      }
 
       // Salva risultato quiz
       const { data: resultData, error: resultError } = await saveQuizResult(
@@ -211,7 +216,11 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
         isFree ? 'free' : 'premium'
       )
 
-      if (resultError) throw resultError
+      if (resultError) {
+        console.error('Errore salvataggio risultato:', resultError)
+        setSaveError('Errore nel salvataggio dei risultati: ' + resultError.message)
+        return
+      }
 
       // Salva risposte individuali per "Ripassa Errori"
       if (resultData && resultData[0]?.id) {
@@ -224,13 +233,24 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
           isCorrect: ans.is_correct,
           category: ans.category
         }))
-        await saveQuizAnswers(quizResultId, answersToSave)
+        
+        const { error: answersError } = await saveQuizAnswers(quizResultId, answersToSave)
+        if (answersError) {
+          console.error('Errore salvataggio risposte:', answersError)
+          setSaveError('Risultati salvati parzialmente. Errore risposte: ' + answersError.message)
+        }
       }
 
       // Check e sblocca achievement se necessario
       await checkAndUnlockAchievements(user.id)
-    } catch (error) {
+      
+      // ✅ EMIT EVENT per aggiornare Dashboard, ReviewMode, etc.
+      console.log('✅ Quiz completato e salvato! Emetto evento quizCompleted')
+      window.dispatchEvent(new Event('quizCompleted'))
+      
+    } catch (error: any) {
       console.error('Errore nel salvataggio risultati:', error)
+      setSaveError('Errore nel salvataggio: ' + (error?.message || 'Errore sconosciuto'))
     }
   }
 
@@ -331,6 +351,34 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
               <div className="text-sm font-semibold text-red-700 dark:text-red-300 mt-1">Sbagliate</div>
             </div>
           </div>
+
+          {/* Messaggio Salvataggio */}
+          {saveError ? (
+            <div className="mb-6 max-w-lg mx-auto">
+              <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 p-4 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">⚠️ Errore Salvataggio</p>
+                    <p className="text-sm text-red-700 dark:text-red-300">{saveError}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-6 max-w-lg mx-auto">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 p-4 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">✅ Risultati salvati con successo!</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="text-gray-700 dark:text-gray-300 mb-10 max-w-lg mx-auto">
             {hasPassed ? (

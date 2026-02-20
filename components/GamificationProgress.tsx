@@ -28,6 +28,18 @@ export default function GamificationProgress() {
   useEffect(() => {
     if (userId) {
       loadGamificationData();
+      
+      // Auto-refresh quando un quiz viene completato
+      const handleQuizCompleted = () => {
+        console.log('✅ Quiz completato, ricarico progressi gamification...');
+        loadGamificationData();
+      };
+      
+      window.addEventListener('quizCompleted', handleQuizCompleted);
+      
+      return () => {
+        window.removeEventListener('quizCompleted', handleQuizCompleted);
+      };
     }
   }, [userId]);
 

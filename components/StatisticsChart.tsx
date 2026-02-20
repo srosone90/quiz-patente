@@ -16,6 +16,18 @@ export default function StatisticsChart({ plan = 'free' }: StatisticsChartProps)
 
   useEffect(() => {
     loadStatistics()
+    
+    // Auto-refresh quando un quiz viene completato
+    const handleQuizCompleted = () => {
+      console.log('✅ Quiz completato, ricarico statistiche...')
+      loadStatistics()
+    }
+    
+    window.addEventListener('quizCompleted', handleQuizCompleted)
+    
+    return () => {
+      window.removeEventListener('quizCompleted', handleQuizCompleted)
+    }
   }, [])
 
   async function loadStatistics() {
