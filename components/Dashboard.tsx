@@ -36,10 +36,18 @@ export default function Dashboard() {
       }
     }
     
+    // Listener per aggiornamento dopo completamento quiz
+    const handleQuizCompleted = () => {
+      console.log('✅ Quiz completato, ricarico dati dashboard...')
+      loadUserData()
+    }
+    
     document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('quizCompleted', handleQuizCompleted)
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('quizCompleted', handleQuizCompleted)
     }
   }, [])
 

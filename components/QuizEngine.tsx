@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase, Question, saveQuizResult, saveQuizAnswers, getQuestionsByCategory, getWrongAnswers, checkAndUnlockAchievements } from '@/lib/supabase'
 import { useWakeLock } from '@/hooks/useWakeLock'
 
@@ -21,6 +22,7 @@ interface UserAnswer {
 }
 
 export default function QuizEngine({ plan = 'free', category, mode = 'normal' }: QuizEngineProps) {
+  const router = useRouter()
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
@@ -98,7 +100,9 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
 
       if (mode === 'review') {
         // Modalità Ripassa Errori: carica domande sbagliate
-        const { data: wrongAnswers, error: wrongError } = await getWrongAnswers(20)
+        // Usa limite coerente con free/premium
+        const maxReviewQuestions = isFree ? 10 : 20
+        const { data: wrongAnswers, error: wrongError } = await getWrongAnswers(maxReviewQuestions)
         if (wrongError) throw wrongError
         if (!wrongAnswers || wrongAnswers.length === 0) {
           setQuizFinished(true)
@@ -308,12 +312,16 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
           </div>
 
           <div className="space-y-4 max-w-md mx-auto">
-            <a 
-              href="/dashboard"
-              className="btn-primary block"
+            <button
+              onClick={() => {
+                // Dispatch custom event per aggiornare dashboard
+                window.dispatchEvent(new Event('quizCompleted'))
+                router.push('/dashboard')
+              }}
+              className="btn-primary block w-full"
             >
               Torna alla Dashboard
-            </a>
+            </button>
             <button
               onClick={() => window.location.reload()}
               className="block w-full bg-gray-100 dark:bg-dark-border text-gray-700 dark:text-gray-300 px-8 py-4 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all transform hover:scale-[1.02]"
