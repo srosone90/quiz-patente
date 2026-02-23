@@ -1,11 +1,24 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cerchio blu di sfondo -->
   <circle cx="256" cy="256" r="256" fill="#2563EB"/>
-  <path d="M166 115 L166 397 L282 397 C320 397 346 371 346 333 C346 307 333 287 313 277 C333 267 346 246 346 220 C346 182 320 156 282 156 L166 156 Z M218 208 L269 208 C287 208 300 221 300 239 C300 257 287 270 269 270 L218 270 Z M218 322 L277 322 C295 322 308 335 308 353 C308 371 295 384 277 384 L218 384 Z" fill="white"/>
-  <path d="M166 282 Q256 218 346 282 L346 397 L166 397 Z" fill="white" opacity="0.95"/>
-  <path d="M218 307 L218 333 M244 297 L244 328 M269 290 L269 323 M295 297 L295 328" stroke="#2563EB" stroke-width="8" stroke-linecap="round"/>
-  <g transform="translate(238, 192) scale(2.5)">
-    <path d="M2 8 L4 2 L10 2 L12 8 Z M0 8 L0 12 L2 12 L2 10 L12 10 L12 12 L14 12 L14 8 Z" fill="white"/>
-    <rect x="3" y="3" width="3" height="3" fill="#2563EB" opacity="0.6"/>
-    <rect x="8" y="3" width="3" height="3" fill="#2563EB" opacity="0.6"/>
+  
+  <!-- Lettera R bianca stilizzata come strada (versione grande) -->
+  <path d="M150 130 L150 382 M150 130 L245 130 C285 130 310 155 310 195 C310 220 295 238 270 245 L325 382 M150 245 L245 245 C270 245 285 228 285 208 C285 188 270 170 245 170 L150 170" 
+        stroke="white" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Strada curva nella parte bassa della R -->
+  <path d="M165 295 Q256 245 345 295 L345 382 Q256 332 165 382 Z" fill="white" opacity="0.3"/>
+  
+  <!-- Linee tratteggiate sulla strada -->
+  <line x1="256" y1="270" x2="256" y2="287" stroke="#2563EB" stroke-width="6" stroke-linecap="round"/>
+  <line x1="256" y1="302" x2="256" y2="319" stroke="#2563EB" stroke-width="6" stroke-linecap="round"/>
+  <line x1="256" y1="334" x2="256" y2="351" stroke="#2563EB" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Auto stilizzata sulla strada -->
+  <g transform="translate(238, 218) scale(2.8)">
+    <path d="M2 6 L3 2 L11 2 L12 6 Z" fill="white"/>
+    <path d="M0 6 L0 10 L2 10 L2 8 L12 8 L12 10 L14 10 L14 6 Z" fill="white"/>
+    <rect x="4" y="3" width="2" height="2" fill="#2563EB" opacity="0.7"/>
+    <rect x="8" y="3" width="2" height="2" fill="#2563EB" opacity="0.7"/>
   </g>
 </svg>

@@ -16,14 +16,15 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-dark-bg/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-dark-bg/80">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <Image 
-            src="/logo.svg" 
-            alt="Quiz Patente Taxi/NCC Logo" 
-            width={48} 
-            height={48}
-            className="w-10 h-10 sm:w-12 sm:h-12"
-            priority
-          />
+          <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
+            <Image 
+              src="/logo.svg" 
+              alt="Quiz Patente Taxi/NCC Logo" 
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
           <div className="flex flex-col">
             <span className="font-bold text-lg sm:text-xl text-primary-600 dark:text-primary-400">
               Quiz Taxi/NCC
