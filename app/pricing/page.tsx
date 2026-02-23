@@ -1,4 +1,15 @@
 import Link from 'next/link'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Piani e Prezzi - Scegli il Tuo Piano',
+  description: 'Scegli il piano perfetto per la tua preparazione all\'esame di Ruolo Conducenti. Piano gratuito con quiz di base o piani premium con accesso illimitato e simulazioni complete.',
+  keywords: ['prezzo corso taxi', 'abbonamento quiz taxi', 'piano premium ncc', 'corso taxi online prezzo'],
+  openGraph: {
+    title: 'Piani e Prezzi Quiz Taxi/NCC Palermo',
+    description: 'Piani flessibili per ogni esigenza. Inizia gratis o scegli il premium.',
+  },
+}
 
 export default function PricingPage() {
   // 🔵 MODALITÀ BETA GRATUITA - Nascondi pricing page

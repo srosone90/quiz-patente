@@ -1,5 +1,16 @@
 import Link from 'next/link'
 import QuizEngine from '@/components/QuizEngine'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Quiz Online - Esercitati per l\'Esame',
+  description: 'Esercitati con i quiz ufficiali per l\'esame di Ruolo Conducenti Taxi e NCC. Domande aggiornate 2026, modalità esame e ripasso, feedback immediato e spiegazioni dettagliate.',
+  keywords: ['quiz taxi online', 'simulazione esame taxi', 'domande esame ncc', 'test conducenti palermo', 'esercitazioni taxi'],
+  openGraph: {
+    title: 'Quiz Online Taxi/NCC - Preparazione Esame',
+    description: 'Esercitati con quiz ufficiali aggiornati. Simulazioni d\'esame realistiche.',
+  },
+}
 
 interface QuizPageProps {
   searchParams: Promise<{

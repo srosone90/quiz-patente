@@ -1,24 +1,30 @@
 {
-  "name": "Quiz Ruolo Conducenti - Taxi/NCC",
-  "short_name": "Quiz Taxi/NCC",
-  "description": "Preparati all'esame Taxi/NCC di Palermo ed Enna con quiz aggiornati",
+  "name": "Quiz Patente Taxi/NCC Palermo - Esame Ruolo Conducenti",
+  "short_name": "Quiz Taxi/NCC PA",
+  "description": "Preparati all'esame per la patente di Ruolo Conducenti Taxi e NCC a Palermo ed Enna. Quiz ufficiali aggiornati 2026.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#002147",
-  "theme_color": "#002147",
+  "background_color": "#2563EB",
+  "theme_color": "#2563EB",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192x192.svg",
+      "src": "/logo-icon.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512x512.svg",
+      "src": "/logo-icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
       "src": "/favicon.ico",
@@ -28,20 +34,29 @@
   ],
   "screenshots": [],
   "categories": ["education", "productivity"],
+  "lang": "it",
+  "dir": "ltr",
   "shortcuts": [
     {
       "name": "Inizia Quiz",
       "short_name": "Quiz",
-      "description": "Inizia un quiz subito",
-      "url": "/dashboard",
-      "icons": [{ "src": "/icon-192x192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+      "description": "Inizia subito un quiz di preparazione",
+      "url": "/quiz",
+      "icons": [{ "src": "/logo-icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     },
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "description": "Vai alla dashboard",
+      "description": "Vai alla tua dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/icon-192x192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/logo-icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Statistiche",
+      "short_name": "Stats",
+      "description": "Visualizza le tue statistiche",
+      "url": "/dashboard#stats",
+      "icons": [{ "src": "/logo-icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     }
   ]
 }

@@ -6,22 +6,100 @@ import { I18nProvider } from '@/contexts/I18nContext'
 import ThemeToggle from '@/components/ThemeToggle'
 import PWARegister from '@/components/PWARegister'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
+import Header from '@/components/Header'
 
 const inter = Inter({ subsets: ['latin'] })
 
+const siteUrl = 'https://driverquizpa.com'
+const siteName = 'Quiz Patente Taxi/NCC Palermo'
+const siteDescription = 'Preparati all\'esame per la patente di Ruolo Conducenti Taxi e NCC a Palermo ed Enna. Quiz ufficiali aggiornati 2026, simulazioni d\'esame, statistiche dettagliate e sistema di apprendimento progressivo. Supera l\'esame al primo tentativo!'
+
 export const metadata: Metadata = {
-  title: 'Quiz Ruolo Conducenti - Preparazione Esame Taxi/NCC',
-  description: 'Preparati all\'esame Taxi/NCC di Palermo ed Enna con quiz aggiornati',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: siteName,
+    template: `%s | ${siteName}`
+  },
+  description: siteDescription,
+  keywords: [
+    'quiz taxi palermo',
+    'quiz ncc palermo', 
+    'patente taxi',
+    'patente ncc',
+    'esame ruolo conducenti',
+    'esame taxi palermo',
+    'quiz patente taxi online',
+    'simulazione esame taxi',
+    'ruolo conducenti palermo',
+    'quiz conducenti enna',
+    'preparazione esame taxi',
+    'licenza taxi',
+    'abilitazione ncc',
+    'corso taxi online',
+    'quiz ministeriali taxi',
+    'patente KB',
+    'esame teorico taxi'
+  ],
+  authors: [{ name: 'Driver Quiz PA' }],
+  creator: 'Driver Quiz PA',
+  publisher: 'Driver Quiz PA',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.ico',
-    apple: '/icon-192x192.svg',
+    icon: [
+      { url: '/logo-icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '48x48' }
+    ],
+    apple: [
+      { url: '/logo-icon.svg', type: 'image/svg+xml' }
+    ],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Quiz Taxi/NCC',
+    title: 'Quiz Taxi/NCC PA',
   },
+  openGraph: {
+    type: 'website',
+    locale: 'it_IT',
+    url: siteUrl,
+    siteName: siteName,
+    title: siteName,
+    description: siteDescription,
+    images: [
+      {
+        url: '/logo.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Quiz Patente Taxi/NCC Palermo - Logo',
+      }
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteName,
+    description: siteDescription,
+    images: ['/logo.svg'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: siteUrl,
+  },
+  category: 'education',
 }
 
 export const viewport: Viewport = {
@@ -40,16 +118,65 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'EducationalOrganization',
+    name: 'Quiz Patente Taxi/NCC Palermo',
+    description: 'Piattaforma di preparazione per l\'esame di Ruolo Conducenti Taxi e NCC',
+    url: 'https://driverquizpa.com',
+    logo: 'https://driverquizpa.com/logo.svg',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Palermo',
+      addressRegion: 'Sicilia',
+      addressCountry: 'IT'
+    },
+    sameAs: [],
+    offers: {
+      '@type': 'Offer',
+      category: 'Formazione Online',
+      availability: 'https://schema.org/OnlineOnly',
+      priceCurrency: 'EUR'
+    },
+    educationalCredentialAwarded: 'Preparazione Esame Ruolo Conducenti',
+    serviceType: [
+      'Quiz online per patente taxi',
+      'Quiz online per patente NCC', 
+      'Simulazioni esame teorico',
+      'Preparazione esame Ruolo Conducenti'
+    ],
+    areaServed: [
+      {
+        '@type': 'City',
+        name: 'Palermo'
+      },
+      {
+        '@type': 'City', 
+        name: 'Enna'
+      },
+      {
+        '@type': 'AdministrativeArea',
+        name: 'Sicilia'
+      }
+    ]
+  }
+
   return (
     <html lang="it">
       <head>
         <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || ''} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <link rel="canonical" href="https://driverquizpa.com" />
       </head>
       <body className={inter.className}>
         <ThemeProvider>
           <I18nProvider>
             <PWARegister />
             <div className="min-h-screen bg-white dark:bg-dark-bg transition-colors">
+              <Header />
               <ThemeToggle />
               {children}
             </div>
