@@ -51,11 +51,11 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/logo-icon.svg', type: 'image/svg+xml' },
+      { url: '/logo.png', type: 'image/png' },
       { url: '/favicon.ico', sizes: '48x48' }
     ],
     apple: [
-      { url: '/logo-icon.svg', type: 'image/svg+xml' }
+      { url: '/logo.png', type: 'image/png' }
     ],
   },
   appleWebApp: {
@@ -72,9 +72,9 @@ export const metadata: Metadata = {
     description: siteDescription,
     images: [
       {
-        url: '/logo.svg',
+        url: '/logo.png',
         width: 1200,
-        height: 630,
+        height: 1200,
         alt: 'Quiz Patente Taxi/NCC Palermo - Logo',
       }
     ],
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: siteName,
     description: siteDescription,
-    images: ['/logo.svg'],
+    images: ['/logo.png'],
   },
   robots: {
     index: true,
@@ -124,7 +124,7 @@ export default function RootLayout({
     name: 'Quiz Patente Taxi/NCC Palermo',
     description: 'Piattaforma di preparazione per l\'esame di Ruolo Conducenti Taxi e NCC',
     url: 'https://driverquizpa.com',
-    logo: 'https://driverquizpa.com/logo.svg',
+    logo: 'https://driverquizpa.com/logo.png',
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Palermo',

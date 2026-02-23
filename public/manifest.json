@@ -9,21 +9,21 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/logo-icon.svg",
+      "src": "/logo.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo-icon.svg",
+      "src": "/logo.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/logo.svg",
+      "src": "/logo.png",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
@@ -42,21 +42,21 @@
       "short_name": "Quiz",
       "description": "Inizia subito un quiz di preparazione",
       "url": "/quiz",
-      "icons": [{ "src": "/logo-icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/logo.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "Vai alla tua dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/logo-icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/logo.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Statistiche",
       "short_name": "Stats",
       "description": "Visualizza le tue statistiche",
       "url": "/dashboard#stats",
-      "icons": [{ "src": "/logo-icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+      "icons": [{ "src": "/logo.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

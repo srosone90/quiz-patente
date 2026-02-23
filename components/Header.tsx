@@ -18,7 +18,7 @@ export default function Header() {
         <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
             <Image 
-              src="/logo.svg" 
+              src="/logo.png" 
               alt="Quiz Patente Taxi/NCC Logo" 
               fill
               className="object-contain"
