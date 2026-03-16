@@ -111,29 +111,12 @@ export default function AdminDashboard() {
   }
 
   async function loadAllData() {
-    try {
-      // Carica statistiche globali
-      const { data: globalStats } = await getAdminGlobalStats()
-      setStats(globalStats)
-      
-      // Carica statistiche B2B
-      const b2bData = await getB2BDashboardStats()
-      setB2bStats(b2bData)
-      
-      // Carica codici di accesso
-      const { data: accessCodes } = await getAllAccessCodes()
-      setCodes(accessCodes || [])
-      
-      // Carica utenti
-      const { data: allUsers } = await getAllUsers()
-      setUsers(allUsers || [])
-      
-      // Carica statistiche domande
-      const { data: qStats } = await getAdminQuestionStats()
-      setQuestionStats(qStats?.slice(0, 20) || []) // Top 20
-    } catch (error) {
-      console.error('Errore caricamento dati admin:', error)
-    }
+    // Ogni sezione carica indipendentemente — un errore non blocca le altre
+    getAllUsers().then(({ data }) => setUsers(data || [])).catch(console.error)
+    getAllAccessCodes().then(({ data }) => setCodes((data as AccessCode[]) || [])).catch(console.error)
+    getAdminGlobalStats().then(({ data }) => setStats(data)).catch(console.error)
+    getAdminQuestionStats().then(({ data }) => setQuestionStats(data?.slice(0, 20) || [])).catch(console.error)
+    getB2BDashboardStats().then(data => setB2bStats(data)).catch(console.error)
   }
 
   async function handleGenerateCode() {
