@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
-export default function AutoscuolaSuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
   const [dots, setDots] = useState('.')
@@ -45,5 +45,13 @@ export default function AutoscuolaSuccessPage() {
         )}
       </div>
     </main>
+  )
+}
+
+export default function AutoscuolaSuccessPage() {
+  return (
+    <Suspense>
+      <SuccessContent />
+    </Suspense>
   )
 }
