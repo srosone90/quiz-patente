@@ -557,7 +557,7 @@ export default function QuestionManagement() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-900 text-xs uppercase tracking-wider text-gray-600 dark:text-gray-400">
                 <tr>
-                  <th className="px-4 py-3 text-left">ID</th>
+                  <th className="px-4 py-3 text-left">#</th>
                   <th className="px-4 py-3 text-left">Tipo Patente</th>
                   <th className="px-4 py-3 text-left">Categoria</th>
                   <th className="px-4 py-3 text-left">Domanda</th>
@@ -566,9 +566,9 @@ export default function QuestionManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filtered.map(q => (
+                {filtered.map((q, idx) => (
                   <tr key={q.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
-                    <td className="px-4 py-3 text-gray-400 dark:text-gray-500 font-mono text-xs">{q.id}</td>
+                    <td className="px-4 py-3 text-gray-400 dark:text-gray-500 font-mono text-xs" title={`ID: ${q.id}`}>{idx + 1}</td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200">
                         {LICENSE_TYPES.find(l => l.id === q.license_type)?.label ?? q.license_type ?? '—'}
