@@ -101,16 +101,21 @@ export default function AdminDashboard() {
         setLoading(false)
         return
       }
-      // Mostra l'admin se c'è una sessione valida
-      // RLS sul DB protegge i dati comunque
+
+      const adminOk = await isAdmin()
+      if (!adminOk) {
+        router.push('/')
+        setLoading(false)
+        return
+      }
+
       setAuthorized(true)
       setLoading(false)
       loadAllData()
     } catch (error) {
       console.error('Errore verifica admin:', error)
-      setAuthorized(true)
+      router.push('/')
       setLoading(false)
-      loadAllData()
     }
   }
 
