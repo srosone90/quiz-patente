@@ -444,13 +444,16 @@ export default function Dashboard() {
 
         {/* ── Avvia Quiz: card per tipo patente (o singola card per beta/utenti liberi) ── */}
         {(() => {
-          // Determina quali tipi patente mostrare
-          // - Studente con scuola e licenze abilitate → le card della scuola
-          // - Tutti gli altri (beta, utenti liberi) → solo taxi_ncc
+          // Determina quali tipi patente mostrare:
+          // 1. Studente con scuola e licenze abilitate → le card della scuola
+          // 2. Utente con license_type nel profilo (codice riscattato) → quella specifica patente
+          // 3. Tutti gli altri (beta, utenti liberi) → solo taxi_ncc
           const plan = isPremium ? 'premium' : 'free'
           const activeLicenseTypes =
             mySchool && schoolLicenses.length > 0
               ? LICENSE_TYPES.filter(lt => schoolLicenses.includes(lt.id))
+              : profile?.license_type
+              ? LICENSE_TYPES.filter(lt => lt.id === profile.license_type)
               : LICENSE_TYPES.filter(lt => lt.id === 'taxi_ncc')
 
           // Icone per tipo patente
