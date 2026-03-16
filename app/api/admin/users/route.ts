@@ -2,24 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 // Crea client Supabase admin solo quando necessario
+// IMPORTANT: .trim() is required — Vercel env vars can have trailing/leading newlines
+// which cause Node.js fetch to throw "Headers.set: invalid header value"
 function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
-  console.log('[getSupabaseAdmin] URL:', supabaseUrl ? 'presente' : 'MANCANTE')
-  console.log('[getSupabaseAdmin] Key:', supabaseKey ? 'presente' : 'MANCANTE')
-  
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
+  const supabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
+
   if (!supabaseUrl || !supabaseKey) {
-    console.error('[getSupabaseAdmin] Missing env vars!')
     throw new Error('Missing Supabase environment variables')
   }
-  
-  console.log('[getSupabaseAdmin] Creating client...')
+
   return createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
+    auth: { autoRefreshToken: false, persistSession: false }
   })
 }
 
@@ -30,24 +24,32 @@ async function verifyAdminToken(token: string): Promise<boolean> {
   if (!token || typeof token !== 'string') return false
 
   try {
-    // 1. Decode JWT payload (no signature check here — just extract sub + exp)
-    const parts = token.split('.')
+    // Trim in case the env var or stored value has leading/trailing newlines
+    const cleanToken = token.trim()
+
+    // Decode JWT payload
+    const parts = cleanToken.split('.')
     if (parts.length !== 3) return false
     const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
     const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'))
+
+    // Reject service-role keys — they have role='service_role' instead of sub
+    if (payload.role === 'service_role' || payload.role === 'anon') return false
+
     const userId = payload.sub as string | undefined
     const exp = payload.exp as number | undefined
     if (!userId) return false
-    // Reject expired tokens
     if (exp && Math.floor(Date.now() / 1000) > exp) return false
 
-    // 2. Use service-role admin API to confirm the user actually exists in Auth
-    //    This prevents forged JWTs with made-up user IDs from passing
+    // getSupabaseAdmin() now trims keys — HTTP requests will succeed even if
+    // the Vercel env var had a leading/trailing newline
     const supabaseAdmin = getSupabaseAdmin()
+
+    // Verify user exists in Supabase Auth (prevents forged sub claims)
     const { data: { user }, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId)
     if (authError || !user) return false
 
-    // 3. Check admin role in user_profiles via service-role client (no RLS, no JWT headers)
+    // Check admin role in user_profiles
     const { data: profile } = await supabaseAdmin
       .from('user_profiles')
       .select('role')
