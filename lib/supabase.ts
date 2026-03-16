@@ -614,6 +614,14 @@ export async function createQuestion(q: Omit<Question, 'id'>) {
   return { data, error }
 }
 
+export async function bulkCreateQuestions(questions: Array<Omit<Question, 'id'>>) {
+  const { data, error } = await supabase
+    .from('questions')
+    .insert(questions)
+    .select()
+  return { data, error }
+}
+
 export async function updateQuestion(id: number, q: Partial<Omit<Question, 'id'>>) {
   const { data, error } = await supabase
     .from('questions')

@@ -9,6 +9,7 @@ import {
   updateQuestion,
   deleteQuestion,
   getCategories,
+  bulkCreateQuestions,
 } from '@/lib/supabase'
 
 // ─── Costanti ────────────────────────────────────────────────────────────────
@@ -46,6 +47,13 @@ export default function QuestionManagement() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<FormData>({ ...EMPTY_FORM })
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+
+  // Import
+  const [importOpen, setImportOpen] = useState(false)
+  const [importParsed, setImportParsed] = useState<Array<Omit<Question, 'id'>>>([]) 
+  const [importParseErrors, setImportParseErrors] = useState<string[]>([])
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{ inserted: number; errors: string[] } | null>(null)
 
   // ─── Carica dati ───────────────────────────────────────────────────────────
 
@@ -161,6 +169,133 @@ export default function QuestionManagement() {
     loadQuestions()
   }
 
+  // ─── Import ──────────────────────────────────────────────────────────────────
+
+  function parseCSVLine(line: string): string[] {
+    const result: string[] = []
+    let cur = ''
+    let inQuotes = false
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i]
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { cur += '"'; i++ }
+        else inQuotes = !inQuotes
+      } else if (ch === ',' && !inQuotes) {
+        result.push(cur); cur = ''
+      } else {
+        cur += ch
+      }
+    }
+    result.push(cur)
+    return result
+  }
+
+  const VALID_LICENSE_IDS = new Set<string>(LICENSE_TYPES.map(l => l.id))
+
+  function normalizeRow(raw: Record<string, string>): { q: Omit<Question, 'id'>; err: string | null } {
+    const question = (raw.question || '').trim()
+    if (!question) return { q: {} as any, err: 'Campo "question" mancante' }
+
+    // Accetta sia answers[] (JSON) sia answer_1..4 (CSV/JSON flat)
+    const answers: string[] = Array.isArray((raw as any).answers)
+      ? (raw as any).answers.map((a: string) => a.trim()).filter(Boolean)
+      : [raw.answer_1, raw.answer_2, raw.answer_3, raw.answer_4]
+          .map(a => (a || '').trim())
+          .filter(Boolean)
+
+    if (answers.length < 2) return { q: {} as any, err: `"${question.slice(0, 40)}..." ha meno di 2 risposte` }
+
+    const correct_answer = (raw.correct_answer || '').trim()
+    if (!correct_answer) return { q: {} as any, err: `"${question.slice(0, 40)}..." senza risposta corretta` }
+    if (!answers.includes(correct_answer)) return { q: {} as any, err: `"${question.slice(0, 40)}..." risposta corretta non presente nelle risposte` }
+
+    const license_type = (raw.license_type || '').trim()
+    if (license_type && !VALID_LICENSE_IDS.has(license_type))
+      return { q: {} as any, err: `"${question.slice(0, 40)}..." license_type "${license_type}" non valido` }
+
+    return {
+      q: {
+        question,
+        answers,
+        correct_answer,
+        category: (raw.category || '').trim() || undefined,
+        explanation: (raw.explanation || '').trim() || undefined,
+        license_type: license_type || 'taxi_ncc',
+      },
+      err: null,
+    }
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string
+      let rawRows: Record<string, string>[] = []
+      const parseErrors: string[] = []
+
+      try {
+        if (file.name.endsWith('.json')) {
+          const parsed = JSON.parse(text)
+          const arr = Array.isArray(parsed) ? parsed : [parsed]
+          rawRows = arr
+        } else if (file.name.endsWith('.csv')) {
+          const lines = text.split(/\r?\n/).filter(l => l.trim())
+          if (lines.length < 2) { setImportParseErrors(['Il CSV deve avere almeno una riga header + una riga dati']); return }
+          const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase())
+          for (let i = 1; i < lines.length; i++) {
+            const vals = parseCSVLine(lines[i])
+            const row: Record<string, string> = {}
+            headers.forEach((h, idx) => { row[h] = vals[idx] ?? '' })
+            rawRows.push(row)
+          }
+        } else {
+          setImportParseErrors(['Formato non supportato. Usa .json o .csv'])
+          return
+        }
+      } catch (err: any) {
+        setImportParseErrors([`Errore di parsing: ${err.message}`])
+        return
+      }
+
+      const valid: Array<Omit<Question, 'id'>> = []
+      rawRows.forEach((raw, i) => {
+        const { q, err } = normalizeRow(raw)
+        if (err) parseErrors.push(`Riga ${i + 2}: ${err}`)
+        else valid.push(q)
+      })
+
+      setImportParsed(valid)
+      setImportParseErrors(parseErrors)
+      setImportResult(null)
+    }
+    reader.readAsText(file, 'UTF-8')
+    // reset input so same file can be re-selected
+    e.target.value = ''
+  }
+
+  async function handleImport() {
+    if (importParsed.length === 0) return
+    setImporting(true)
+    const { data, error } = await bulkCreateQuestions(importParsed)
+    const inserted = data?.length ?? 0
+    const errors = error ? [error.message] : []
+    setImportResult({ inserted, errors })
+    setImporting(false)
+    if (inserted > 0) {
+      loadQuestions()
+      loadCategories()
+    }
+  }
+
+  function closeImport() {
+    setImportOpen(false)
+    setImportParsed([])
+    setImportParseErrors([])
+    setImportResult(null)
+  }
+
   // ─── Ricerca client-side ────────────────────────────────────────────────────
 
   const filtered = filterSearch.trim()
@@ -199,6 +334,12 @@ export default function QuestionManagement() {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition"
           >
             <span className="text-lg leading-none">+</span> Nuova Domanda
+          </button>
+          <button
+            onClick={() => { setImportOpen(true); setImportParsed([]); setImportParseErrors([]); setImportResult(null) }}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition"
+          >
+            <span>📥</span> Importa
           </button>
         </div>
 
@@ -300,6 +441,147 @@ export default function QuestionManagement() {
           </div>
         )}
       </div>
+
+      {/* ── Modale: Import ──────────────────────────────────────────────────── */}
+      {importOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 overflow-y-auto py-8 px-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">📥 Importa Domande</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Supporta file .json e .csv</p>
+              </div>
+              <button onClick={closeImport} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl leading-none">&times;</button>
+            </div>
+
+            <div className="px-6 py-5 space-y-5">
+              {/* Istruzioni formato */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
+                  <p className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-2">📄 Formato JSON</p>
+                  <pre className="text-[10px] text-gray-600 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap">{`[
+  {
+    "question": "Testo domanda",
+    "answers": ["A","B","C","D"],
+    "correct_answer": "A",
+    "category": "Codice della Strada",
+    "explanation": "Opzionale",
+    "license_type": "taxi_ncc"
+  }
+]`}</pre>
+                </div>
+                <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
+                  <p className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-2">📊 Formato CSV (header obbligatorio)</p>
+                  <pre className="text-[10px] text-gray-600 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap">{`question,answer_1,answer_2,answer_3,answer_4,correct_answer,category,explanation,license_type
+"Testo?","A","B","C","D","A","Categoria","Spieg.","taxi_ncc"`}</pre>
+                  <p className="text-[10px] text-gray-400 mt-2">Valori license_type: taxi_ncc, ab, am, cd, cqc, nautica, adr, cap_kb, revisione</p>
+                </div>
+              </div>
+
+              {/* File picker */}
+              {!importResult && (
+                <label className="flex flex-col items-center gap-3 p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-emerald-400 dark:hover:border-emerald-500 transition">
+                  <span className="text-4xl">📂</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Clicca per selezionare un file .json o .csv</span>
+                  <input type="file" accept=".json,.csv" onChange={handleFileSelect} className="hidden" />
+                </label>
+              )}
+
+              {/* Errori di parsing */}
+              {importParseErrors.length > 0 && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg space-y-1">
+                  <p className="text-xs font-bold text-red-700 dark:text-red-300">⚠️ {importParseErrors.length} righe non valide (saranno saltate):</p>
+                  {importParseErrors.slice(0, 8).map((e, i) => (
+                    <p key={i} className="text-xs text-red-600 dark:text-red-400">{e}</p>
+                  ))}
+                  {importParseErrors.length > 8 && <p className="text-xs text-red-500">...e altri {importParseErrors.length - 8}</p>}
+                </div>
+              )}
+
+              {/* Preview */}
+              {importParsed.length > 0 && !importResult && (
+                <div>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    ✅ {importParsed.length} domande pronte all'importazione
+                  </p>
+                  <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                    <table className="w-full text-xs">
+                      <thead className="bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+                        <tr>
+                          <th className="px-3 py-2 text-left">#</th>
+                          <th className="px-3 py-2 text-left">Patente</th>
+                          <th className="px-3 py-2 text-left">Categoria</th>
+                          <th className="px-3 py-2 text-left">Domanda</th>
+                          <th className="px-3 py-2 text-left">Risp. corretta</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                        {importParsed.slice(0, 5).map((q, i) => (
+                          <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                            <td className="px-3 py-2 text-gray-400">{i + 1}</td>
+                            <td className="px-3 py-2">
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                                {q.license_type}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-gray-500 dark:text-gray-400 max-w-[100px] truncate">{q.category || '—'}</td>
+                            <td className="px-3 py-2 text-gray-900 dark:text-gray-100 max-w-xs">
+                              <p className="line-clamp-2">{q.question}</p>
+                            </td>
+                            <td className="px-3 py-2 text-green-700 dark:text-green-300 max-w-[120px] truncate">{q.correct_answer}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {importParsed.length > 5 && (
+                      <p className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-700">
+                        ...e altre {importParsed.length - 5} domande
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Risultato import */}
+              {importResult && (
+                <div className={`p-4 rounded-lg border ${
+                  importResult.errors.length === 0
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+                    : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700'
+                }`}>
+                  <p className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+                    {importResult.inserted > 0 ? `✅ ${importResult.inserted} domande importate con successo!` : '❌ Import fallito'}
+                  </p>
+                  {importResult.errors.map((e, i) => (
+                    <p key={i} className="text-xs text-red-600 dark:text-red-400 mt-1">{e}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+              <button onClick={closeImport} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                {importResult ? 'Chiudi' : 'Annulla'}
+              </button>
+              {importParsed.length > 0 && !importResult && (
+                <button
+                  onClick={handleImport}
+                  disabled={importing}
+                  className="px-5 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-lg transition flex items-center gap-2"
+                >
+                  {importing ? (
+                    <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Importazione...</>
+                  ) : (
+                    <>📥 Importa {importParsed.length} domande</>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Modale: Crea / Modifica ─────────────────────────────────────────── */}
       {modalOpen && (
