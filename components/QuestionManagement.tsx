@@ -930,7 +930,7 @@ category,explanation,license_type
                             </td>
                             <td className="px-3 py-2">
                               <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-                                {q.license_type}
+                                {importForceLicense || q.license_type}
                               </span>
                             </td>
                             <td className="px-3 py-2 text-gray-500 dark:text-gray-400 max-w-[100px] truncate">{q.category || '—'}</td>
