@@ -592,19 +592,31 @@ export async function getAllSchools() {
 // ============================================
 
 export async function getAllQuestions(licenseType?: string, category?: string) {
-  let query = supabase
-    .from('questions')
-    .select('*')
-    .order('license_type', { ascending: true })
-    .order('category', { ascending: true })
-    .order('id', { ascending: true })
-    .limit(100000)
+  const PAGE = 1000
+  let allData: any[] = []
+  let from = 0
 
-  if (licenseType) query = query.eq('license_type', licenseType)
-  if (category) query = query.eq('category', category)
+  while (true) {
+    let query = supabase
+      .from('questions')
+      .select('*')
+      .order('license_type', { ascending: true })
+      .order('category', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, from + PAGE - 1)
 
-  const { data, error } = await query
-  return { data, error }
+    if (licenseType) query = query.eq('license_type', licenseType)
+    if (category) query = query.eq('category', category)
+
+    const { data, error } = await query
+    if (error) return { data: null, error }
+    if (!data || data.length === 0) break
+    allData = allData.concat(data)
+    if (data.length < PAGE) break
+    from += PAGE
+  }
+
+  return { data: allData, error: null }
 }
 
 export async function createQuestion(q: Omit<Question, 'id'>) {
