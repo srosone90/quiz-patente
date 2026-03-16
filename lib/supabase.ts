@@ -701,11 +701,9 @@ export async function updateUser(userId: string, updates: any) {
 
     const response = await fetch('/api/admin/users', {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
-      },
-      body: JSON.stringify({ userId, updates })
+      headers: { 'Content-Type': 'application/json' },
+      // Token in body to avoid browser Headers.set restrictions on JWT characters
+      body: JSON.stringify({ userId, updates, accessToken: session.access_token })
     })
 
     if (!response.ok) {
@@ -726,11 +724,10 @@ export async function deleteUser(userId: string) {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) throw new Error('Non autenticato')
 
-    const response = await fetch(`/api/admin/users?userId=${userId}`, {
+    const response = await fetch('/api/admin/users', {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`
-      }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, accessToken: session.access_token })
     })
 
     if (!response.ok) {
