@@ -199,3 +199,25 @@ export async function DELETE(request: NextRequest) {
     )
   }
 }
+
+// GET: Lista tutti gli utenti (bypassa RLS con service role key)
+export async function GET(request: NextRequest) {
+  try {
+    const isAdmin = await verifyAdmin(request)
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
+    }
+
+    const supabaseAdmin = getSupabaseAdmin()
+    const { data, error } = await supabaseAdmin
+      .from('user_profiles')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return NextResponse.json({ users: data || [] })
+  } catch (error: any) {
+    console.error('Errore lista utenti:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
