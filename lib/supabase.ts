@@ -366,7 +366,7 @@ export async function getAdminQuestionStats(limit: number = 50) {
   return { data, error }
 }
 
-// Genera codice di accesso per scuole guida
+// Genera codice di accesso per scuole guida (via API route server-side per bypassare RLS)
 export async function generateAccessCode(
   schoolName: string,
   planType: 'last_minute' | 'senza_pensieri',
@@ -376,41 +376,36 @@ export async function generateAccessCode(
   schoolId?: number,
   licenseType?: string
 ) {
-  // Assicura sessione fresca — stesso fix di updateUser/deleteUser
   let { data: { session } } = await supabase.auth.getSession()
   if (!session) {
     const { data: refreshed } = await supabase.auth.refreshSession()
     session = refreshed.session
   }
   if (!session) throw new Error('User not authenticated')
-  const user = session.user
 
-  const code = `${planType.toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
+  const response = await fetch('/api/admin/codes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      schoolName,
+      planType,
+      durationDays,
+      maxUses,
+      expiresAt: expiresAt || null,
+      schoolId: schoolId || null,
+      licenseType: licenseType || null,
+      accessToken: session.access_token,
+    }),
+  })
 
-  console.log('Generating code:', { code, schoolName, planType, durationDays, maxUses, userId: user.id })
-
-  const { data, error } = await supabase
-    .from('access_codes')
-    .insert([{
-      code,
-      school_name: schoolName,
-      plan_type: planType,
-      duration_days: durationDays,
-      max_uses: maxUses,
-      created_by: user.id,
-      expires_at: expiresAt || null,
-      school_id: schoolId || null,
-      license_type: licenseType || null
-    }])
-    .select()
-
-  if (error) {
-    console.error('Error generating code:', error)
-    throw new Error(error.message || 'Errore nella creazione del codice')
+  const json = await response.json()
+  if (!response.ok) {
+    console.error('Error generating code:', json)
+    throw new Error(json.error || 'Errore nella creazione del codice')
   }
 
-  console.log('Code generated successfully:', code)
-  return code
+  console.log('Code generated successfully:', json.code)
+  return json.code as string
 }
 
 // Ottieni tutti i codici (admin)
