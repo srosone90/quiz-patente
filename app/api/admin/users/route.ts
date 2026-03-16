@@ -81,35 +81,16 @@ export async function PATCH(request: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin()
 
-    console.log('[PATCH] Updating user:', userId, 'with', updates)
-
-    // Prova prima con id
-    let result = await supabaseAdmin
+    // With service role, update succeeds silently (data may be empty) — only check for errors
+    const { error: updateError } = await supabaseAdmin
       .from('user_profiles')
       .update(updates)
       .eq('id', userId)
-      .select()
 
-    // Se non trova niente, prova con user_id
-    if (!result.data || result.data.length === 0) {
-      console.log('[PATCH] Try with user_id')
-      result = await supabaseAdmin
-        .from('user_profiles')
-        .update(updates)
-        .eq('user_id', userId)
-        .select()
-    }
-
-    if (result.error) throw result.error
-    if (!result.data || result.data.length === 0) {
-      throw new Error('Utente non trovato')
-    }
-
-    console.log('[PATCH] Update successful:', result.data[0])
+    if (updateError) throw updateError
 
     return NextResponse.json({ 
       success: true, 
-      user: result.data[0],
       message: 'Utente aggiornato con successo'
     })
 
@@ -141,37 +122,17 @@ export async function DELETE(request: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin()
 
-    console.log('[DELETE] Deleting user:', userId)
-
-    // Prova prima con id
-    let deleteResult = await supabaseAdmin
+    // Delete profile row — only check for errors, not returned data (service role quirk)
+    const { error: deleteError } = await supabaseAdmin
       .from('user_profiles')
       .delete()
       .eq('id', userId)
-      .select()
 
-    // Se non trova niente, prova con user_id
-    if (!deleteResult.data || deleteResult.data.length === 0) {
-      console.log('[DELETE] Try with user_id')
-      deleteResult = await supabaseAdmin
-        .from('user_profiles')
-        .delete()
-        .eq('user_id', userId)
-        .select()
-    }
+    if (deleteError) throw deleteError
 
-    if (deleteResult.error) throw deleteResult.error
-    if (!deleteResult.data || deleteResult.data.length === 0) {
-      throw new Error('Utente non trovato')
-    }
-
-    // Elimina l'utente dall'autenticazione
+    // Delete from Supabase Auth
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
-    
-    if (authError) {
-      console.error('Errore eliminazione auth:', authError)
-      // Continua comunque se il profilo è stato eliminato
-    }
+    if (authError) console.error('Errore eliminazione auth:', authError)
 
     return NextResponse.json({ 
       success: true,
