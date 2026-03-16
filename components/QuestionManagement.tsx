@@ -396,8 +396,20 @@ export default function QuestionManagement() {
     }
     let imageUrl: string | undefined
     const imgData = get('image')
-    if (imgData instanceof Uint8Array && imgData.length > 0) imageUrl = uint8ToDataUrl(imgData)
-    else if (typeof imgData === 'string' && imgData.startsWith('data:')) imageUrl = imgData
+    if (imgData instanceof Uint8Array && imgData.length > 0) {
+      imageUrl = uint8ToDataUrl(imgData)
+    } else if (typeof imgData === 'string' && imgData.length > 0) {
+      if (imgData.startsWith('data:')) {
+        imageUrl = imgData
+      } else if (/^[A-Za-z0-9+/]+=*$/.test(imgData.replace(/\s/g, '')) && imgData.length > 100) {
+        // Base64 puro senza prefisso data:
+        imageUrl = `data:image/jpeg;base64,${imgData.replace(/\s/g, '')}`
+      }
+      // Se è un path (es. "images/001.jpg") lo salviamo comunque per debug
+      else if (imgData.match(/\.(jpg|jpeg|png|gif|webp|bmp)/i)) {
+        imageUrl = imgData // path relativo, non sarà visualizzabile ma viene preservato
+      }
+    }
     return {
       question:       str(get('question')),
       answer_1:       str(get('answer_1')),
@@ -438,7 +450,24 @@ export default function QuestionManagement() {
       return row
     })
     const hasImages = !!colMap.image
-    setImportSqliteInfo(`Tabella "${target}" \u00b7 ${colNames.length} colonne \u00b7 ${rawRows.length} righe${hasImages ? ' \u00b7 \uD83D\uDDBC\uFE0F immagini rilevate' : ''}`)
+    // Diagnostica immagini: campiona le prime 3 righe con immagine non nulla
+    let imgDiag = ''
+    if (colMap.image) {
+      const imgCol = colMap.image
+      const nonNull = rawRows.filter(r => r[imgCol] != null && r[imgCol] !== '').slice(0, 3)
+      if (nonNull.length === 0) {
+        imgDiag = ' · ⚠️ colonna immagine trovata ma tutti i valori sono NULL'
+      } else {
+        const sample = nonNull[0][imgCol]
+        const sampleType = sample instanceof Uint8Array
+          ? `BLOB ${sample.length} bytes`
+          : typeof sample === 'string'
+            ? `stringa "${String(sample).slice(0, 40)}"`
+            : `tipo: ${typeof sample}`
+        imgDiag = ` · 🖼️ ${nonNull.length} immagini · tipo: ${sampleType}`
+      }
+    }
+    setImportSqliteInfo(`Tabella "${target}" · ${colNames.length} colonne · ${rawRows.length} righe${imgDiag}`)
     setImportStatus(hasImages ? 'Elaborazione immagini...' : null)
     const valid: Array<Omit<Question, 'id'>> = []
     const errors: string[] = []
