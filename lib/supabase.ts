@@ -29,6 +29,7 @@ export interface Question {
   category?: string
   explanation?: string
   license_type?: string
+  image_url?: string
 }
 
 export interface QuizResult {

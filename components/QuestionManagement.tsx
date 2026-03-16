@@ -27,6 +27,31 @@ const EMPTY_FORM: Omit<Question, 'id'> = {
 
 type FormData = Omit<Question, 'id'>
 
+// ─── SQLite loader (cached, browser-only) ────────────────────────────────────
+
+let _sqlJsCache: any = null
+let _sqlJsLoading: Promise<any> | null = null
+async function loadSqlJs(): Promise<any> {
+  if (_sqlJsCache) return _sqlJsCache
+  if (_sqlJsLoading) return _sqlJsLoading
+  _sqlJsLoading = new Promise<any>((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = 'https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js'
+    script.onload = async () => {
+      try {
+        const SQL = await (window as any).initSqlJs({
+          locateFile: () => 'https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.wasm',
+        })
+        _sqlJsCache = SQL
+        resolve(SQL)
+      } catch (e) { reject(e) }
+    }
+    script.onerror = () => reject(new Error('Impossibile caricare il parser SQLite dal CDN'))
+    document.head.appendChild(script)
+  })
+  return _sqlJsLoading
+}
+
 // ─── Componente principale ────────────────────────────────────────────────────
 
 export default function QuestionManagement() {
@@ -50,12 +75,12 @@ export default function QuestionManagement() {
 
   // Import
   const [importOpen, setImportOpen] = useState(false)
-  const [importParsed, setImportParsed] = useState<Array<Omit<Question, 'id'>>>([]) 
+  const [importParsed, setImportParsed] = useState<Array<Omit<Question, 'id'>>>([])
   const [importParseErrors, setImportParseErrors] = useState<string[]>([])
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<{ inserted: number; errors: string[] } | null>(null)
-
-  // ─── Carica dati ───────────────────────────────────────────────────────────
+  const [importStatus, setImportStatus] = useState<string | null>(null)
+  const [importSqliteInfo, setImportSqliteInfo] = useState<string | null>(null)
 
   const loadQuestions = useCallback(async () => {
     setLoading(true)
@@ -106,6 +131,7 @@ export default function QuestionManagement() {
       category: q.category || '',
       explanation: q.explanation || '',
       license_type: q.license_type || 'taxi_ncc',
+      image_url: q.image_url,
     })
     setEditingId(q.id)
     setModalOpen(true)
@@ -192,24 +218,22 @@ export default function QuestionManagement() {
 
   const VALID_LICENSE_IDS = new Set<string>(LICENSE_TYPES.map(l => l.id))
 
-  function normalizeRow(raw: Record<string, string>): { q: Omit<Question, 'id'>; err: string | null } {
-    const question = (raw.question || '').trim()
+  function normalizeRow(raw: Record<string, any>): { q: Omit<Question, 'id'>; err: string | null } {
+    const str = (v: any) => (v == null ? '' : String(v)).trim()
+    const question = str(raw.question)
     if (!question) return { q: {} as any, err: 'Campo "question" mancante' }
 
-    // Accetta sia answers[] (JSON) sia answer_1..4 (CSV/JSON flat)
-    const answers: string[] = Array.isArray((raw as any).answers)
-      ? (raw as any).answers.map((a: string) => a.trim()).filter(Boolean)
-      : [raw.answer_1, raw.answer_2, raw.answer_3, raw.answer_4]
-          .map(a => (a || '').trim())
-          .filter(Boolean)
+    const answers: string[] = Array.isArray(raw.answers)
+      ? raw.answers.map((a: any) => str(a)).filter(Boolean)
+      : [raw.answer_1, raw.answer_2, raw.answer_3, raw.answer_4].map(str).filter(Boolean)
 
     if (answers.length < 2) return { q: {} as any, err: `"${question.slice(0, 40)}..." ha meno di 2 risposte` }
 
-    const correct_answer = (raw.correct_answer || '').trim()
+    const correct_answer = str(raw.correct_answer)
     if (!correct_answer) return { q: {} as any, err: `"${question.slice(0, 40)}..." senza risposta corretta` }
     if (!answers.includes(correct_answer)) return { q: {} as any, err: `"${question.slice(0, 40)}..." risposta corretta non presente nelle risposte` }
 
-    const license_type = (raw.license_type || '').trim()
+    const license_type = str(raw.license_type)
     if (license_type && !VALID_LICENSE_IDS.has(license_type))
       return { q: {} as any, err: `"${question.slice(0, 40)}..." license_type "${license_type}" non valido` }
 
@@ -218,28 +242,146 @@ export default function QuestionManagement() {
         question,
         answers,
         correct_answer,
-        category: (raw.category || '').trim() || undefined,
-        explanation: (raw.explanation || '').trim() || undefined,
+        category: str(raw.category) || undefined,
+        explanation: str(raw.explanation) || undefined,
         license_type: license_type || 'taxi_ncc',
+        image_url: (raw.image_url as string) || undefined,
       },
       err: null,
     }
   }
 
+  // ─── SQLite helpers ─────────────────────────────────────────────────────────
+
+  function uint8ToDataUrl(data: Uint8Array): string {
+    const mime = (data[0] === 0xFF && data[1] === 0xD8) ? 'image/jpeg'
+      : (data[0] === 0x89 && data[1] === 0x50) ? 'image/png'
+      : (data[0] === 0x47 && data[1] === 0x49) ? 'image/gif'
+      : 'image/jpeg'
+    let binary = ''
+    const chunk = 8192
+    for (let i = 0; i < data.length; i += chunk)
+      binary += String.fromCharCode(...Array.from(data.subarray(i, Math.min(i + chunk, data.length))))
+    return `data:${mime};base64,${btoa(binary)}`
+  }
+
+  function buildColumnMap(cols: string[]): Record<string, string> {
+    const lower = cols.map(c => c.toLowerCase())
+    const find = (...cands: string[]) => {
+      for (const c of cands) { const i = lower.indexOf(c); if (i !== -1) return cols[i] }
+    }
+    const m: Record<string, string> = {}
+    const set = (k: string, v: string | undefined) => { if (v) m[k] = v }
+    set('question',      find('question','domanda','text','testo','question_text','q','description','domanda_testo'))
+    set('answer_1',      find('answer_1','answer1','a1','ans1','option_a','risposta_1','risposta1','opzione_a'))
+    set('answer_2',      find('answer_2','answer2','a2','ans2','option_b','risposta_2','risposta2','opzione_b'))
+    set('answer_3',      find('answer_3','answer3','a3','ans3','option_c','risposta_3','risposta3','opzione_c'))
+    set('answer_4',      find('answer_4','answer4','a4','ans4','option_d','risposta_4','risposta4','opzione_d'))
+    set('answers',       find('answers','risposte','opzioni'))
+    set('correct_answer',find('correct_answer','correct','answer_key','risposta_corretta','risposta_giusta','key','giusta'))
+    set('category',      find('category','categoria','argomento','topic','subject','materia','sezione'))
+    set('explanation',   find('explanation','spiegazione','note','rationale','motivazione','commento','dettaglio'))
+    set('license_type',  find('license_type','tipo_patente','patente','license','tipo'))
+    set('image',         find('image','image_data','immagine','foto','picture','img','image_blob','photo','thumbnail','immagine_domanda'))
+    return m
+  }
+
+  function mapSqliteRow(row: Record<string, any>, colMap: Record<string, string>): Record<string, any> {
+    const get = (k: string) => colMap[k] !== undefined ? row[colMap[k]] : undefined
+    const str = (v: any) => (v == null ? '' : String(v))
+    let answersArr: string[] | undefined
+    const rawAns = get('answers')
+    if (rawAns != null) {
+      try { const p = typeof rawAns === 'string' ? JSON.parse(rawAns) : rawAns; if (Array.isArray(p)) answersArr = p.map(String) } catch {}
+    }
+    let imageUrl: string | undefined
+    const imgData = get('image')
+    if (imgData instanceof Uint8Array && imgData.length > 0) imageUrl = uint8ToDataUrl(imgData)
+    else if (typeof imgData === 'string' && imgData.startsWith('data:')) imageUrl = imgData
+    return {
+      question:       str(get('question')),
+      answer_1:       str(get('answer_1')),
+      answer_2:       str(get('answer_2')),
+      answer_3:       str(get('answer_3')),
+      answer_4:       str(get('answer_4')),
+      ...(answersArr ? { answers: answersArr } : {}),
+      correct_answer: str(get('correct_answer')),
+      category:       str(get('category')),
+      explanation:    str(get('explanation')),
+      license_type:   str(get('license_type')),
+      ...(imageUrl ? { image_url: imageUrl } : {}),
+    }
+  }
+
+  async function handleSqliteBuffer(buffer: ArrayBuffer) {
+    setImportStatus('Caricamento parser SQLite...')
+    const SQL = await loadSqlJs()
+    setImportStatus('Apertura database...')
+    const db = new SQL.Database(new Uint8Array(buffer))
+    const tablesRes = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+    const tables: string[] = (tablesRes[0]?.values || []).map((v: any) => String(v[0]))
+    if (tables.length === 0) { db.close(); throw new Error('Nessuna tabella trovata nel database') }
+    const preferred = ['questions','domande','quiz','question','quizzes','domande_quiz']
+    const target = tables.find(t => preferred.includes(t.toLowerCase())) || tables[0]
+    const colRes = db.exec(`PRAGMA table_info("${target}")`)
+    const colNames: string[] = (colRes[0]?.values || []).map((v: any) => String(v[1]))
+    const colMap = buildColumnMap(colNames)
+    if (!colMap.question) { db.close(); throw new Error(`Colonna "question" non trovata. Colonne rilevate: ${colNames.join(', ')}`) }
+    setImportStatus('Lettura domande...')
+    const dataRes = db.exec(`SELECT * FROM "${target}"`)
+    db.close()
+    if (!dataRes[0]) { setImportSqliteInfo(`Tabella "${target}" vuota`); setImportStatus(null); return }
+    const cols = dataRes[0].columns
+    const rawRows = dataRes[0].values.map((vals: any[]) => {
+      const row: Record<string, any> = {}
+      cols.forEach((col: string, i: number) => { row[col] = vals[i] })
+      return row
+    })
+    const hasImages = !!colMap.image
+    setImportSqliteInfo(`Tabella "${target}" \u00b7 ${colNames.length} colonne \u00b7 ${rawRows.length} righe${hasImages ? ' \u00b7 \uD83D\uDDBC\uFE0F immagini rilevate' : ''}`)
+    setImportStatus(hasImages ? 'Elaborazione immagini...' : null)
+    const valid: Array<Omit<Question, 'id'>> = []
+    const errors: string[] = []
+    rawRows.forEach((row: Record<string, any>, i: number) => {
+      const { q, err } = normalizeRow(mapSqliteRow(row, colMap))
+      if (err) errors.push(`Riga ${i + 1}: ${err}`)
+      else valid.push(q)
+    })
+    setImportParsed(valid)
+    setImportParseErrors(errors)
+    setImportResult(null)
+    setImportStatus(null)
+  }
+
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    e.target.value = ''
+    setImportParsed([])
+    setImportParseErrors([])
+    setImportResult(null)
+    setImportSqliteInfo(null)
+    setImportStatus(null)
+
+    if (/\.(sqlite|sqlite3|db)$/i.test(file.name)) {
+      const reader = new FileReader()
+      reader.onload = async (ev) => {
+        try { await handleSqliteBuffer(ev.target?.result as ArrayBuffer) }
+        catch (err: any) { setImportParseErrors([`Errore SQLite: ${err.message}`]); setImportStatus(null) }
+      }
+      reader.readAsArrayBuffer(file)
+      return
+    }
+
     const reader = new FileReader()
     reader.onload = (ev) => {
       const text = ev.target?.result as string
-      let rawRows: Record<string, string>[] = []
+      let rawRows: Record<string, any>[] = []
       const parseErrors: string[] = []
-
       try {
         if (file.name.endsWith('.json')) {
           const parsed = JSON.parse(text)
-          const arr = Array.isArray(parsed) ? parsed : [parsed]
-          rawRows = arr
+          rawRows = Array.isArray(parsed) ? parsed : [parsed]
         } else if (file.name.endsWith('.csv')) {
           const lines = text.split(/\r?\n/).filter(l => l.trim())
           if (lines.length < 2) { setImportParseErrors(['Il CSV deve avere almeno una riga header + una riga dati']); return }
@@ -250,29 +392,18 @@ export default function QuestionManagement() {
             headers.forEach((h, idx) => { row[h] = vals[idx] ?? '' })
             rawRows.push(row)
           }
-        } else {
-          setImportParseErrors(['Formato non supportato. Usa .json o .csv'])
-          return
-        }
-      } catch (err: any) {
-        setImportParseErrors([`Errore di parsing: ${err.message}`])
-        return
-      }
-
+        } else { setImportParseErrors(['Formato non supportato. Usa .json, .csv o .sqlite']); return }
+      } catch (err: any) { setImportParseErrors([`Errore di parsing: ${err.message}`]); return }
       const valid: Array<Omit<Question, 'id'>> = []
       rawRows.forEach((raw, i) => {
         const { q, err } = normalizeRow(raw)
         if (err) parseErrors.push(`Riga ${i + 2}: ${err}`)
         else valid.push(q)
       })
-
       setImportParsed(valid)
       setImportParseErrors(parseErrors)
-      setImportResult(null)
     }
     reader.readAsText(file, 'UTF-8')
-    // reset input so same file can be re-selected
-    e.target.value = ''
   }
 
   async function handleImport() {
@@ -294,6 +425,8 @@ export default function QuestionManagement() {
     setImportParsed([])
     setImportParseErrors([])
     setImportResult(null)
+    setImportStatus(null)
+    setImportSqliteInfo(null)
   }
 
   // ─── Ricerca client-side ────────────────────────────────────────────────────
@@ -395,7 +528,7 @@ export default function QuestionManagement() {
                   <th className="px-4 py-3 text-left">Tipo Patente</th>
                   <th className="px-4 py-3 text-left">Categoria</th>
                   <th className="px-4 py-3 text-left">Domanda</th>
-                  <th className="px-4 py-3 text-left">Spiegazione</th>
+                  <th className="px-4 py-3 text-left">Extra</th>
                   <th className="px-4 py-3 text-left">Azioni</th>
                 </tr>
               </thead>
@@ -413,10 +546,13 @@ export default function QuestionManagement() {
                       <p className="line-clamp-2">{q.question}</p>
                     </td>
                     <td className="px-4 py-3">
-                      {q.explanation
-                        ? <span className="text-green-600 dark:text-green-400 text-xs font-medium">✓ Presente</span>
-                        : <span className="text-gray-400 text-xs">—</span>
-                      }
+                      <div className="flex items-center gap-1.5">
+                        {q.image_url && <span title="Ha immagine">📷</span>}
+                        {q.explanation
+                          ? <span className="text-green-600 dark:text-green-400 text-xs font-medium">✓ Spieg.</span>
+                          : (!q.image_url && <span className="text-gray-400 text-xs">—</span>)
+                        }
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -450,42 +586,75 @@ export default function QuestionManagement() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">📥 Importa Domande</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Supporta file .json e .csv</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Supporta .json, .csv e .sqlite (con immagini integrate)</p>
               </div>
               <button onClick={closeImport} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl leading-none">&times;</button>
             </div>
 
             <div className="px-6 py-5 space-y-5">
               {/* Istruzioni formato */}
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
-                  <p className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-2">📄 Formato JSON</p>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
+                  <p className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-2">📄 JSON</p>
                   <pre className="text-[10px] text-gray-600 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap">{`[
   {
-    "question": "Testo domanda",
+    "question": "Testo",
     "answers": ["A","B","C","D"],
     "correct_answer": "A",
-    "category": "Codice della Strada",
-    "explanation": "Opzionale",
+    "category": "CdS",
+    "explanation": "",
     "license_type": "taxi_ncc"
   }
 ]`}</pre>
                 </div>
-                <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
-                  <p className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-2">📊 Formato CSV (header obbligatorio)</p>
-                  <pre className="text-[10px] text-gray-600 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap">{`question,answer_1,answer_2,answer_3,answer_4,correct_answer,category,explanation,license_type
-"Testo?","A","B","C","D","A","Categoria","Spieg.","taxi_ncc"`}</pre>
-                  <p className="text-[10px] text-gray-400 mt-2">Valori license_type: taxi_ncc, ab, am, cd, cqc, nautica, adr, cap_kb, revisione</p>
+                <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900">
+                  <p className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-2">📊 CSV</p>
+                  <pre className="text-[10px] text-gray-600 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap">{`question,answer_1,answer_2,
+answer_3,answer_4,correct_answer,
+category,explanation,license_type
+"Testo?","A","B","C","D",
+"A","Cat","Spieg","taxi_ncc"`}</pre>
+                  <p className="text-[10px] text-gray-400 mt-1">license_type: taxi_ncc, ab, am, cd, cqc, nautica, adr, cap_kb, revisione</p>
+                </div>
+                <div className="p-3 rounded-lg border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20">
+                  <p className="text-xs font-bold text-blue-700 dark:text-blue-300 mb-2">🗄️ SQLite (.sqlite / .db)</p>
+                  <p className="text-[10px] text-gray-600 dark:text-gray-300 leading-relaxed">
+                    Tabella: <code>questions</code> (o <code>domande</code>, <code>quiz</code>)<br/>
+                    Colonne riconosciute automaticamente:<br/>
+                    • question / domanda / text<br/>
+                    • answer_1..4 / a1..4 / option_a..d<br/>
+                    • correct_answer / risposta_corretta<br/>
+                    • category / categoria / argomento<br/>
+                    • explanation / spiegazione<br/>
+                    • license_type / tipo_patente<br/>
+                    • <strong>image / immagine / foto (BLOB)</strong><br/>
+                    <span className="text-blue-600 dark:text-blue-400">✓ Immagini JPEG/PNG/GIF/WebP integrate come BLOB</span>
+                  </p>
                 </div>
               </div>
 
               {/* File picker */}
-              {!importResult && (
+              {!importResult && !importStatus && (
                 <label className="flex flex-col items-center gap-3 p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-emerald-400 dark:hover:border-emerald-500 transition">
                   <span className="text-4xl">📂</span>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Clicca per selezionare un file .json o .csv</span>
-                  <input type="file" accept=".json,.csv" onChange={handleFileSelect} className="hidden" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Clicca per selezionare un file .json, .csv o .sqlite</span>
+                  <input type="file" accept=".json,.csv,.sqlite,.sqlite3,.db" onChange={handleFileSelect} className="hidden" />
                 </label>
+              )}
+
+              {/* Status SQLite parsing */}
+              {importStatus && (
+                <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+                  <span className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  <span className="text-sm text-blue-700 dark:text-blue-300">{importStatus}</span>
+                </div>
+              )}
+
+              {/* Info tabella SQLite */}
+              {importSqliteInfo && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                  <span>🗄️</span><span>{importSqliteInfo}</span>
+                </p>
               )}
 
               {/* Errori di parsing */}
@@ -510,6 +679,7 @@ export default function QuestionManagement() {
                       <thead className="bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
                         <tr>
                           <th className="px-3 py-2 text-left">#</th>
+                          <th className="px-3 py-2 text-left">Img</th>
                           <th className="px-3 py-2 text-left">Patente</th>
                           <th className="px-3 py-2 text-left">Categoria</th>
                           <th className="px-3 py-2 text-left">Domanda</th>
@@ -520,6 +690,11 @@ export default function QuestionManagement() {
                         {importParsed.slice(0, 5).map((q, i) => (
                           <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-750">
                             <td className="px-3 py-2 text-gray-400">{i + 1}</td>
+                            <td className="px-3 py-2">
+                              {q.image_url
+                                ? <img src={q.image_url} alt="" className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-600" />
+                                : <span className="text-gray-300 text-xs">—</span>}
+                            </td>
                             <td className="px-3 py-2">
                               <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
                                 {q.license_type}
@@ -702,6 +877,14 @@ export default function QuestionManagement() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none"
                 />
               </div>
+
+              {/* Immagine (read-only, da import SQLite) */}
+              {form.image_url && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Immagine</label>
+                  <img src={form.image_url} alt="Immagine domanda" className="max-h-48 rounded-lg border border-gray-200 dark:border-gray-600 object-contain" />
+                </div>
+              )}
             </div>
 
             {/* Footer modale */}
