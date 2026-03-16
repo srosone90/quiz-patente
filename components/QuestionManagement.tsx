@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
+  supabase,
   Question,
   LICENSE_TYPES,
   getAllQuestions,
@@ -225,13 +226,21 @@ export default function QuestionManagement() {
   async function handleBulkUpdateLicense() {
     if (!bulkLicense || selectedIds.size === 0) return
     setBulkWorking(true)
-    const { error } = await bulkUpdateQuestionsLicense(Array.from(selectedIds), bulkLicense)
-    if (error) { showError('Errore aggiornamento: ' + error.message) }
-    else {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/admin/questions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds), license_type: bulkLicense, accessToken: session?.access_token }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Errore aggiornamento')
       showSuccess(`${selectedIds.size} domande aggiornate → ${LICENSE_TYPES.find(l => l.id === bulkLicense)?.label}`)
       setSelectedIds(new Set())
       setBulkLicense('')
       loadQuestions()
+    } catch (e: any) {
+      showError('Errore aggiornamento: ' + e.message)
     }
     setBulkWorking(false)
   }
@@ -239,13 +248,21 @@ export default function QuestionManagement() {
   async function handleBulkDelete() {
     if (selectedIds.size === 0) return
     setBulkWorking(true)
-    const { error } = await bulkDeleteQuestions(Array.from(selectedIds))
-    if (error) { showError('Errore eliminazione: ' + error.message) }
-    else {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/admin/questions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds), accessToken: session?.access_token }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Errore eliminazione')
       showSuccess(`${selectedIds.size} domande eliminate`)
       setSelectedIds(new Set())
       setBulkConfirmDelete(false)
       loadQuestions()
+    } catch (e: any) {
+      showError('Errore eliminazione: ' + e.message)
     }
     setBulkWorking(false)
   }
