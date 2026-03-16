@@ -11,18 +11,22 @@ interface LeaderboardEntry {
   total_quizzes_completed: number;
 }
 
-export default function Leaderboard() {
+interface LeaderboardProps {
+  licenseType?: string;
+}
+
+export default function Leaderboard({ licenseType }: LeaderboardProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadLeaderboard();
-  }, []);
+  }, [licenseType]);
 
   const loadLeaderboard = async () => {
     setLoading(true);
-    const data = await getWeeklyLeaderboard(10);
+    const data = await getWeeklyLeaderboard(10, licenseType);
     setLeaderboard(data);
     
     // Get current user ID
@@ -77,7 +81,7 @@ export default function Leaderboard() {
           <div>
             <h3 className="text-2xl font-bold">Classifica Settimanale</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Top 10 studenti per XP totale
+              Top 10 studenti per XP totale{licenseType ? ` · ${licenseType.replace('_', ' ').toUpperCase()}` : ''}
             </p>
           </div>
         </div>

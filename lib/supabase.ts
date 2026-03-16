@@ -1507,8 +1507,32 @@ async function unlockAchievement(userId: string, achievementId: string): Promise
   }
 }
 
-// Get weekly leaderboard
-export async function getWeeklyLeaderboard(limit: number = 10): Promise<any[]> {
+// Get weekly leaderboard (filtrata per tipo patente se specificato)
+export async function getWeeklyLeaderboard(limit: number = 10, licenseType?: string): Promise<any[]> {
+  if (licenseType) {
+    // Prima ottieni gli utenti con quel tipo di patente
+    const { data: profiles } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('license_type', licenseType)
+
+    const userIds = (profiles || []).map((p: any) => p.id)
+    if (userIds.length === 0) return []
+
+    const { data, error } = await supabase
+      .from('user_progress')
+      .select('user_id, total_xp, level, total_quizzes_completed')
+      .in('user_id', userIds)
+      .order('total_xp', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      console.error('Error fetching leaderboard:', error)
+      return []
+    }
+    return data || []
+  }
+
   const { data, error } = await supabase
     .from('user_progress')
     .select('user_id, total_xp, level, total_quizzes_completed')

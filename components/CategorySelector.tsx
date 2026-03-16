@@ -7,19 +7,20 @@ import { Lock, Target } from 'lucide-react'
 
 interface CategorySelectorProps {
   isPremium: boolean
+  licenseType?: string
 }
 
-export default function CategorySelector({ isPremium }: CategorySelectorProps) {
+export default function CategorySelector({ isPremium, licenseType }: CategorySelectorProps) {
   const [categories, setCategories] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadCategories()
-  }, [])
+  }, [licenseType])
 
   const loadCategories = async () => {
     try {
-      const { data } = await getCategories()
+      const { data } = await getCategories(licenseType)
       setCategories(data || [])
     } catch (error) {
       console.error('Errore caricamento categorie:', error)
@@ -82,7 +83,7 @@ export default function CategorySelector({ isPremium }: CategorySelectorProps) {
       <div className="grid sm:grid-cols-2 gap-3">
         {/* Tutte le categorie */}
         <Link
-          href="/quiz?plan=premium"
+          href={`/quiz?plan=premium${licenseType ? `&license_type=${licenseType}` : ''}`}
           className="group p-4 rounded-xl border-2 border-primary-200 dark:border-primary-900/30 bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark-surface dark:to-dark-hover hover:shadow-lg hover:scale-[1.02] transition-all"
         >
           <div className="flex items-center gap-3">
@@ -102,7 +103,7 @@ export default function CategorySelector({ isPremium }: CategorySelectorProps) {
           return (
             <Link
               key={category}
-              href={`/quiz?plan=premium&category=${encodeURIComponent(category)}`}
+              href={`/quiz?plan=premium&category=${encodeURIComponent(category)}${licenseType ? `&license_type=${licenseType}` : ''}`}
               className="group p-4 rounded-xl border-2 border-gray-200 dark:border-dark-border hover:border-primary-300 dark:hover:border-primary-700 hover:bg-gray-50 dark:hover:bg-dark-hover hover:shadow-lg hover:scale-[1.02] transition-all"
             >
               <div className="flex items-center gap-3">

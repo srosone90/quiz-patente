@@ -148,6 +148,12 @@ export default function Dashboard() {
   const isFreeBetaMode = process.env.NEXT_PUBLIC_FREE_BETA_MODE === 'true'
   const isPremium = isFreeBetaMode ? true : profile?.subscription_type !== 'free'
 
+  // Tipo patente attivo: usato da leaderboard, categorie, ripasso
+  const activeLicenseType: string =
+    mySchool && schoolLicenses.length > 0
+      ? schoolLicenses[0]
+      : profile?.license_type || 'taxi_ncc'
+
   const allMenuItems = [
     { id: 'overview', label: 'Panoramica', Icon: Home, description: 'Informazioni generali' },
     { id: 'progress', label: 'Progresso', Icon: Trophy, description: 'Livelli e trofei' },
@@ -598,7 +604,7 @@ export default function Dashboard() {
         {/* Sezione Classifica */}
         {activeSection === 'leaderboard' && (
           <div className="space-y-6">
-            <Leaderboard />
+            <Leaderboard licenseType={activeLicenseType} />
           </div>
         )}
 
@@ -616,7 +622,7 @@ export default function Dashboard() {
               
               <div className="grid sm:grid-cols-2 gap-4 mb-6">
                 <Link
-                  href={`/quiz?plan=${isPremium ? 'premium' : 'free'}`}
+                  href={`/quiz?plan=${isPremium ? 'premium' : 'free'}&license_type=${activeLicenseType}`}
                   className="group card-hover p-6 flex flex-col items-center text-center bg-gradient-to-br from-primary-600 to-primary-700 text-white border-none"
                 >
                   <div className="mb-3 group-hover:scale-110 transition-transform">
@@ -646,7 +652,7 @@ export default function Dashboard() {
                 ) : (
                   <div className="card p-4">
                     <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Seleziona Categoria</h4>
-                    <CategorySelector isPremium={true} />
+                    <CategorySelector isPremium={true} licenseType={activeLicenseType} />
                   </div>
                 )}
               </div>
@@ -675,7 +681,7 @@ export default function Dashboard() {
                 Rivedi le domande a cui hai risposto in modo errato per migliorare la tua preparazione
               </p>
             </div>
-            <ReviewMode isPremium={isPremium} />
+            <ReviewMode isPremium={isPremium} licenseType={activeLicenseType} />
           </div>
         )}
 

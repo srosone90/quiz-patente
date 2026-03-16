@@ -7,9 +7,10 @@ import { PartyPopper, RotateCcw } from 'lucide-react'
 
 interface ReviewModeProps {
   isPremium: boolean
+  licenseType?: string
 }
 
-export default function ReviewMode({ isPremium }: ReviewModeProps) {
+export default function ReviewMode({ isPremium, licenseType }: ReviewModeProps) {
   const [wrongCount, setWrongCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -122,7 +123,7 @@ export default function ReviewMode({ isPremium }: ReviewModeProps) {
           </p>
           
           <Link
-            href={`/quiz?plan=${isPremium ? 'premium' : 'free'}&mode=review`}
+            href={`/quiz?plan=${isPremium ? 'premium' : 'free'}&mode=review${licenseType ? `&license_type=${licenseType}` : ''}`}
             className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-orange-600 text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
