@@ -81,6 +81,7 @@ export default function QuestionManagement() {
   const [importResult, setImportResult] = useState<{ inserted: number; errors: string[] } | null>(null)
   const [importStatus, setImportStatus] = useState<string | null>(null)
   const [importSqliteInfo, setImportSqliteInfo] = useState<string | null>(null)
+  const [importForceLicense, setImportForceLicense] = useState('')
 
   const loadQuestions = useCallback(async () => {
     setLoading(true)
@@ -437,7 +438,10 @@ export default function QuestionManagement() {
   async function handleImport() {
     if (importParsed.length === 0) return
     setImporting(true)
-    const { data, error } = await bulkCreateQuestions(importParsed)
+    const rows = importForceLicense
+      ? importParsed.map(q => ({ ...q, license_type: importForceLicense }))
+      : importParsed
+    const { data, error } = await bulkCreateQuestions(rows)
     const inserted = data?.length ?? 0
     const errors = error ? [error.message] : []
     setImportResult({ inserted, errors })
@@ -455,6 +459,7 @@ export default function QuestionManagement() {
     setImportResult(null)
     setImportStatus(null)
     setImportSqliteInfo(null)
+    setImportForceLicense('')
   }
 
   // ─── Ricerca client-side ────────────────────────────────────────────────────
@@ -659,6 +664,21 @@ category,explanation,license_type
                     <span className="text-blue-600 dark:text-blue-400">✓ Immagini JPEG/PNG/GIF/WebP integrate come BLOB</span>
                   </p>
                 </div>
+              </div>
+
+              {/* Forza tipo patente */}
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Forza tipo patente:</label>
+                <select
+                  value={importForceLicense}
+                  onChange={e => setImportForceLicense(e.target.value)}
+                  className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">— Usa quello del file (default: taxi_ncc) —</option>
+                  {LICENSE_TYPES.map(lt => (
+                    <option key={lt.id} value={lt.id}>{lt.label}</option>
+                  ))}
+                </select>
               </div>
 
               {/* File picker */}
