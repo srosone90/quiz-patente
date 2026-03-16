@@ -77,12 +77,6 @@ export default function Dashboard() {
       const isAdminRole = profileData?.role === 'admin'
       setIsAdminUser(isAdminRole)
 
-      // Se admin: redirect automatico a /admin
-      if (isAdminRole) {
-        router.replace('/admin')
-        return
-      }
-
       // Carica scuola di appartenenza (se presente)
       const { data: schoolData } = await getMySchool()
       setMySchool(schoolData)

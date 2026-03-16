@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   isAdmin, 
+  getUserProfile,
   getAdminGlobalStats, 
   generateAccessCode, 
   getAllAccessCodes,
@@ -89,7 +90,9 @@ export default function AdminDashboard() {
 
   async function checkAdminAccess() {
     try {
-      const isAdminUser = await isAdmin()
+      // Usa getUserProfile per leggere il ruolo (evita problemi RLS con isAdmin())
+      const { data: profile } = await getUserProfile()
+      const isAdminUser = profile?.role === 'admin'
       
       if (!isAdminUser) {
         router.push('/dashboard')
