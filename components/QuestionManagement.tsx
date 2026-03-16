@@ -454,7 +454,7 @@ export default function QuestionManagement() {
     let imgDiag = ''
     if (colMap.image) {
       const imgCol = colMap.image
-      const nonNull = rawRows.filter(r => r[imgCol] != null && r[imgCol] !== '').slice(0, 3)
+      const nonNull = rawRows.filter((r: Record<string, any>) => r[imgCol] != null && r[imgCol] !== '').slice(0, 3)
       if (nonNull.length === 0) {
         imgDiag = ' · ⚠️ colonna immagine trovata ma tutti i valori sono NULL'
       } else {
