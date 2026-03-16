@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { getCurrentUser, getQuizHistory, getUserProfile, signOut, isAdmin, getMySchool, getMySchoolLicenses, School, QuizResult, LICENSE_TYPES } from '@/lib/supabase'
+import { getCurrentUser, getQuizHistory, getUserProfile, signOut, getMySchool, getMySchoolLicenses, School, QuizResult, LICENSE_TYPES } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Home, Trophy, Users, User, Gift, Calendar, Target, RotateCcw, BarChart3, TrendingUp, Map, FileText, FileEdit, Rocket, Star, PartyPopper, Lightbulb, Ticket, CreditCard, Clock } from 'lucide-react'
 import CategorySelector from './CategorySelector'
@@ -73,9 +73,8 @@ export default function Dashboard() {
       const { data: historyData } = await getQuizHistory()
       setQuizHistory(historyData || [])
       
-      // Verifica se l'utente è admin
-      const adminCheck = await isAdmin()
-      setIsAdminUser(adminCheck)
+      // Leggi ruolo direttamente dal profilo già caricato (evita doppia query RLS)
+      setIsAdminUser(profileData?.role === 'admin')
 
       // Carica scuola di appartenenza (se presente)
       const { data: schoolData } = await getMySchool()

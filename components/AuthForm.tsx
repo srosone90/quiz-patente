@@ -23,11 +23,15 @@ export default function AuthForm() {
 
     try {
       if (isLogin) {
-        const { error } = await signIn(email, password)
+        const { data: signInData, error } = await signIn(email, password)
         if (error) throw error
-        // Attendi che la sessione venga propagata prima di leggere il ruolo
-        await new Promise(resolve => setTimeout(resolve, 500))
-        const role = await getCurrentUserRole()
+        // Retry: leggi ruolo fino a 5 volte con 400ms di pausa
+        let role = null
+        for (let i = 0; i < 5; i++) {
+          await new Promise(resolve => setTimeout(resolve, 400))
+          role = await getCurrentUserRole()
+          if (role) break
+        }
         if (role === 'admin') router.push('/admin')
         else if (role === 'school_admin') router.push('/school')
         else router.push('/')
