@@ -641,6 +641,22 @@ export async function deleteQuestion(id: number) {
   return { error }
 }
 
+export async function bulkDeleteQuestions(ids: number[]) {
+  const { error } = await supabase
+    .from('questions')
+    .delete()
+    .in('id', ids)
+  return { error }
+}
+
+export async function bulkUpdateQuestionsLicense(ids: number[], license_type: string) {
+  const { error } = await supabase
+    .from('questions')
+    .update({ license_type, updated_at: new Date().toISOString() })
+    .in('id', ids)
+  return { error }
+}
+
 // ============================================
 // FUNZIONI LICENZE SCUOLA
 // ============================================

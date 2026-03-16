@@ -10,6 +10,8 @@ import {
   deleteQuestion,
   getCategories,
   bulkCreateQuestions,
+  bulkDeleteQuestions,
+  bulkUpdateQuestionsLicense,
 } from '@/lib/supabase'
 
 // ─── Costanti ────────────────────────────────────────────────────────────────
@@ -82,6 +84,12 @@ export default function QuestionManagement() {
   const [importStatus, setImportStatus] = useState<string | null>(null)
   const [importSqliteInfo, setImportSqliteInfo] = useState<string | null>(null)
   const [importForceLicense, setImportForceLicense] = useState('')
+
+  // Selezione multipla
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkLicense, setBulkLicense] = useState('')
+  const [bulkConfirmDelete, setBulkConfirmDelete] = useState(false)
+  const [bulkWorking, setBulkWorking] = useState(false)
 
   const loadQuestions = useCallback(async () => {
     setLoading(true)
@@ -194,6 +202,52 @@ export default function QuestionManagement() {
     showSuccess('Domanda eliminata')
     setConfirmDeleteId(null)
     loadQuestions()
+  }
+
+  // ─── Selezione multipla ──────────────────────────────────────────────────────
+
+  function toggleSelect(id: number) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filtered.map(q => q.id)))
+    }
+  }
+
+  async function handleBulkUpdateLicense() {
+    if (!bulkLicense || selectedIds.size === 0) return
+    setBulkWorking(true)
+    const { error } = await bulkUpdateQuestionsLicense(Array.from(selectedIds), bulkLicense)
+    if (error) { showError('Errore aggiornamento: ' + error.message) }
+    else {
+      showSuccess(`${selectedIds.size} domande aggiornate → ${LICENSE_TYPES.find(l => l.id === bulkLicense)?.label}`)
+      setSelectedIds(new Set())
+      setBulkLicense('')
+      loadQuestions()
+    }
+    setBulkWorking(false)
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    setBulkWorking(true)
+    const { error } = await bulkDeleteQuestions(Array.from(selectedIds))
+    if (error) { showError('Errore eliminazione: ' + error.message) }
+    else {
+      showSuccess(`${selectedIds.size} domande eliminate`)
+      setSelectedIds(new Set())
+      setBulkConfirmDelete(false)
+      loadQuestions()
+    }
+    setBulkWorking(false)
   }
 
   // ─── Import ──────────────────────────────────────────────────────────────────
@@ -543,6 +597,63 @@ export default function QuestionManagement() {
         </div>
       </div>
 
+      {/* Barra azioni bulk */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 flex-wrap px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+          <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+            {selectedIds.size} selezionat{selectedIds.size === 1 ? 'a' : 'e'}
+          </span>
+          <button onClick={() => setSelectedIds(new Set())} className="text-xs text-blue-500 hover:underline">
+            Deseleziona tutto
+          </button>
+          <div className="flex-1" />
+          <select
+            value={bulkLicense}
+            onChange={e => setBulkLicense(e.target.value)}
+            className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          >
+            <option value="">— Cambia patente —</option>
+            {LICENSE_TYPES.map(lt => (
+              <option key={lt.id} value={lt.id}>{lt.label}</option>
+            ))}
+          </select>
+          <button
+            onClick={handleBulkUpdateLicense}
+            disabled={!bulkLicense || bulkWorking}
+            className="px-3 py-1.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-lg transition"
+          >
+            {bulkWorking ? 'Aggiornamento...' : 'Applica'}
+          </button>
+          {bulkConfirmDelete ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-red-600 dark:text-red-400 font-medium">
+                Elimina {selectedIds.size} domande?
+              </span>
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkWorking}
+                className="px-3 py-1.5 text-sm font-medium bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white rounded-lg transition"
+              >
+                {bulkWorking ? '...' : 'Sì, elimina'}
+              </button>
+              <button
+                onClick={() => setBulkConfirmDelete(false)}
+                className="px-3 py-1.5 text-sm font-medium border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              >
+                Annulla
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setBulkConfirmDelete(true)}
+              className="px-3 py-1.5 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
+            >
+              🗑 Elimina selezionate
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Tabella domande */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         {loading ? (
@@ -557,6 +668,15 @@ export default function QuestionManagement() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-900 text-xs uppercase tracking-wider text-gray-600 dark:text-gray-400">
                 <tr>
+                  <th className="px-3 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                      ref={el => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < filtered.length }}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 cursor-pointer accent-blue-600"
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left">#</th>
                   <th className="px-4 py-3 text-left">Tipo Patente</th>
                   <th className="px-4 py-3 text-left">Categoria</th>
@@ -567,7 +687,15 @@ export default function QuestionManagement() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {filtered.map((q, idx) => (
-                  <tr key={q.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                  <tr key={q.id} className={`hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors ${selectedIds.has(q.id) ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}>
+                    <td className="px-3 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(q.id)}
+                        onChange={() => toggleSelect(q.id)}
+                        className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 cursor-pointer accent-blue-600"
+                      />
+                    </td>
                     <td className="px-4 py-3 text-gray-400 dark:text-gray-500 font-mono text-xs" title={`ID: ${q.id}`}>{idx + 1}</td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200">
