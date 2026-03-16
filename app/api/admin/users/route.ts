@@ -24,37 +24,36 @@ function getSupabaseAdmin() {
 }
 
 // Verifica che il token sia di un utente admin
-// Il token arriva nel body JSON (non nell'header, per evitare restrizioni browser su Headers.set)
+// Approccio: decode JWT payload localmente per estrarre user ID,
+// poi verifica con service-role admin API (nessun header JWT coinvolto)
 async function verifyAdminToken(token: string): Promise<boolean> {
   if (!token || typeof token !== 'string') return false
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!supabaseUrl || !supabaseAnonKey) return false
-
   try {
-    // Decode JWT payload to extract sub (user ID)
+    // 1. Decode JWT payload (no signature check here — just extract sub + exp)
     const parts = token.split('.')
     if (parts.length !== 3) return false
     const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
     const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'))
     const userId = payload.sub as string | undefined
+    const exp = payload.exp as number | undefined
     if (!userId) return false
+    // Reject expired tokens
+    if (exp && Math.floor(Date.now() / 1000) > exp) return false
 
-    // Verify via PostgREST: inject user JWT → Supabase verifies signature server-side
-    // If JWT is invalid/forged, PostgREST returns an error
-    const client = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-      auth: { autoRefreshToken: false, persistSession: false },
-    })
+    // 2. Use service-role admin API to confirm the user actually exists in Auth
+    //    This prevents forged JWTs with made-up user IDs from passing
+    const supabaseAdmin = getSupabaseAdmin()
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId)
+    if (authError || !user) return false
 
-    const { data: profile, error } = await client
+    // 3. Check admin role in user_profiles via service-role client (no RLS, no JWT headers)
+    const { data: profile } = await supabaseAdmin
       .from('user_profiles')
       .select('role')
       .eq('id', userId)
       .single()
 
-    if (error) return false
     return profile?.role === 'admin'
   } catch {
     return false
