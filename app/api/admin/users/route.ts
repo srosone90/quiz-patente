@@ -26,45 +26,37 @@ function getSupabaseAdmin() {
 // Verifica che l'utente che fa la richiesta sia admin
 async function verifyAdmin(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
-  if (!authHeader) {
-    console.log('[verifyAdmin] No auth header')
+  if (!authHeader?.startsWith('Bearer ')) return false
+
+  const token = authHeader.slice(7)
+
+  try {
+    // Verify JWT by passing it explicitly to Supabase Auth (Supabase-recommended server pattern)
+    const supabaseVerify = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data: { user }, error } = await supabaseVerify.auth.getUser(token)
+    if (error || !user) {
+      console.log('[verifyAdmin] Auth error:', error)
+      return false
+    }
+
+    // Check admin role via service-role client (bypasses RLS)
+    const supabaseAdmin = getSupabaseAdmin()
+    const { data: profile } = await supabaseAdmin
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    console.log('[verifyAdmin] user:', user.id, 'role:', profile?.role)
+    return profile?.role === 'admin'
+  } catch (err) {
+    console.error('[verifyAdmin] Exception:', err)
     return false
   }
-
-  const token = authHeader.replace('Bearer ', '')
-
-  // Use anon-key client + user token to verify the JWT (standard Supabase pattern)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('[verifyAdmin] Missing NEXT_PUBLIC env vars')
-    return false
-  }
-
-  const supabaseWithToken = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-    auth: { autoRefreshToken: false, persistSession: false }
-  })
-
-  const { data: { user }, error } = await supabaseWithToken.auth.getUser()
-
-  if (error || !user) {
-    console.log('[verifyAdmin] Auth error:', error)
-    return false
-  }
-
-  console.log('[verifyAdmin] Checking user:', user.id)
-
-  // Use service-role client to check the role (bypasses RLS)
-  const supabaseAdmin = getSupabaseAdmin()
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  console.log('[verifyAdmin] Profile found:', profile, 'error:', profileError)
-  return profile?.role === 'admin'
 }
 
 // PATCH: Modifica utente
