@@ -4,16 +4,19 @@ import { useState, useEffect } from 'react'
 import { Gift } from 'lucide-react'
 import {
   getAllAccessCodes,
+  getAllSchools,
   deleteAccessCode,
   updateAccessCode,
   searchAccessCodes,
   deactivateAccessCode,
   generateAccessCode,
-  type AccessCode
+  type AccessCode,
+  type School
 } from '@/lib/supabase'
 
 export default function EnhancedCodeManagement() {
   const [codes, setCodes] = useState<AccessCode[]>([])
+  const [schools, setSchools] = useState<School[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showGenerateModal, setShowGenerateModal] = useState(false)
@@ -36,6 +39,7 @@ export default function EnhancedCodeManagement() {
 
   // Form per generazione nuovo codice
   const [generateForm, setGenerateForm] = useState({
+    school_id: '' as string | number,
     school_name: '',
     plan_type: 'last_minute' as 'last_minute' | 'senza_pensieri',
     duration_days: 30,
@@ -46,6 +50,7 @@ export default function EnhancedCodeManagement() {
 
   useEffect(() => {
     loadCodes()
+    getAllSchools().then(({ data }) => setSchools((data as School[]) || [])).catch(() => {})
   }, [])
 
   async function loadCodes() {
@@ -115,11 +120,6 @@ export default function EnhancedCodeManagement() {
   async function handleGenerateCode(e: React.FormEvent) {
     e.preventDefault()
     
-    if (!generateForm.school_name.trim()) {
-      alert('Inserisci il nome della scuola guida')
-      return
-    }
-
     const quantity = generateForm.quantity || 1
     
     if (quantity < 1 || quantity > 100) {
@@ -130,15 +130,20 @@ export default function EnhancedCodeManagement() {
     setGenerating(true)
     try {
       const generatedCodes: string[] = []
+      const schoolId = generateForm.school_id ? Number(generateForm.school_id) : undefined
+      const schoolName = generateForm.school_id
+        ? (schools.find(s => s.id === schoolId)?.name || generateForm.school_name)
+        : generateForm.school_name
       
       // Genera il numero specificato di codici
       for (let i = 0; i < quantity; i++) {
         const newCode = await generateAccessCode(
-          generateForm.school_name,
+          schoolName,
           generateForm.plan_type,
           generateForm.duration_days,
           generateForm.max_uses,
-          generateForm.expires_at || undefined
+          generateForm.expires_at || undefined,
+          schoolId
         )
         generatedCodes.push(newCode)
       }
@@ -166,6 +171,7 @@ export default function EnhancedCodeManagement() {
       
       // Reset form
       setGenerateForm({
+        school_id: '',
         school_name: '',
         plan_type: 'last_minute',
         duration_days: 30,
@@ -551,17 +557,32 @@ export default function EnhancedCodeManagement() {
             <form onSubmit={handleGenerateCode} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nome Scuola Guida <span className="text-red-500">*</span>
+                  Scuola Guida
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={generateForm.school_name}
-                  onChange={(e) => setGenerateForm({ ...generateForm, school_name: e.target.value })}
-                  placeholder="Es: Autoscuola Roma Centro"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                           bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
+                {schools.length > 0 ? (
+                  <select
+                    value={generateForm.school_id}
+                    onChange={(e) => setGenerateForm({ ...generateForm, school_id: e.target.value, school_name: '' })}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    <option value="">— Codice generico (no scuola) —</option>
+                    {schools.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}{s.city ? ` — ${s.city}` : ''}</option>
+                    ))}
+                  </select>
+                ) : null}
+                {!generateForm.school_id && (
+                  <input
+                    type="text"
+                    value={generateForm.school_name}
+                    onChange={(e) => setGenerateForm({ ...generateForm, school_name: e.target.value })}
+                    placeholder="Oppure scrivi nome scuola manualmente..."
+                    className="w-full mt-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Se colleghi a una scuola, lo school admin vedrà questo codice nel suo portale
+                </p>
               </div>
 
               <div>

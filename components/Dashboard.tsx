@@ -424,7 +424,9 @@ export default function Dashboard() {
                   Hai un Codice Accesso?
                 </h3>
                 <p className="text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary">
-                  Attiva il tuo codice per sbloccare l'accesso premium
+                  {isFreeBetaMode
+                    ? 'Inserisci il codice della tua autoscuola per collegare il tuo account'
+                    : 'Attiva il tuo codice per sbloccare l\'accesso premium'}
                 </p>
               </div>
               <Link
