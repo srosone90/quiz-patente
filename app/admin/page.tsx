@@ -58,6 +58,7 @@ interface User {
   created_at: string
   role?: string
   school_id?: number | null
+  license_type?: string | null
 }
 
 interface QuestionStat {
@@ -194,6 +195,20 @@ export default function AdminDashboard() {
       loadAllData()
     } catch (error: any) {
       console.error('Errore assegnazione scuola:', error)
+    }
+  }
+
+  async function handleUpdateUserLicenseType(userId: string, newLicenseType: string) {
+    try {
+      const result = await updateUser(userId, { license_type: newLicenseType || null })
+      if (result.error) {
+        alert(`Errore: ${result.error}`)
+        return
+      }
+      loadAllData()
+    } catch (error: any) {
+      console.error('Errore modifica patente:', error)
+      alert(`Errore: ${error.message || error}`)
     }
   }
 
@@ -499,6 +514,7 @@ export default function AdminDashboard() {
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Email</th>
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Nome</th>
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Piano</th>
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Patente</th>
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Ruolo</th>
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Scadenza</th>
                       <th className="text-left py-3 px-6 text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Registrato</th>
@@ -525,6 +541,24 @@ export default function AdminDashboard() {
                               <option value="free">Free</option>
                               <option value="last_minute">Last Minute</option>
                               <option value="senza_pensieri">Senza Pensieri</option>
+                            </select>
+                          </td>
+                          <td className="py-3 px-6 text-sm">
+                            <select
+                              value={user.license_type || ''}
+                              onChange={(e) => handleUpdateUserLicenseType(user.id, e.target.value)}
+                              className="px-2 py-1 rounded-md text-xs font-medium border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600"
+                            >
+                              <option value="">— nessuna —</option>
+                              <option value="taxi_ncc">🚕 Taxi / NCC</option>
+                              <option value="ab">🚗 Patente A/B</option>
+                              <option value="am">🛵 Patente AM</option>
+                              <option value="cd">🚛 Patente C/D</option>
+                              <option value="cqc">📋 CQC</option>
+                              <option value="nautica">⛵ Nautica</option>
+                              <option value="adr">☣️ ADR</option>
+                              <option value="cap_kb">🚁 CAP KB</option>
+                              <option value="revisione">🔄 Revisione</option>
                             </select>
                           </td>
                           <td className="py-3 px-6 text-sm">
