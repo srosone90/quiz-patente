@@ -382,7 +382,7 @@ export default function QuestionManagement() {
     set('category',      find('category','categoria','argomento','topic','subject','materia','sezione'))
     set('explanation',   find('explanation','spiegazione','note','rationale','motivazione','commento','dettaglio'))
     set('license_type',  find('license_type','tipo_patente','patente','license','tipo'))
-    set('image',         find('image','image_data','immagine','foto','picture','img','image_blob','photo','thumbnail','immagine_domanda'))
+    set('image',         find('image','image_data','immagine','foto','picture','img','image_blob','photo','thumbnail','immagine_domanda','data'))
     return m
   }
 
@@ -433,42 +433,79 @@ export default function QuestionManagement() {
     const tablesRes = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
     const tables: string[] = (tablesRes[0]?.values || []).map((v: any) => String(v[0]))
     if (tables.length === 0) { db.close(); throw new Error('Nessuna tabella trovata nel database') }
-    const preferred = ['questions','domande','quiz','question','quizzes','domande_quiz']
-    const target = tables.find(t => preferred.includes(t.toLowerCase())) || tables[0]
-    const colRes = db.exec(`PRAGMA table_info("${target}")`)
-    const colNames: string[] = (colRes[0]?.values || []).map((v: any) => String(v[1]))
-    const colMap = buildColumnMap(colNames)
-    if (!colMap.question) { db.close(); throw new Error(`Colonna "question" non trovata. Colonne rilevate: ${colNames.join(', ')}`) }
-    setImportStatus('Lettura domande...')
-    const dataRes = db.exec(`SELECT * FROM "${target}"`)
-    db.close()
-    if (!dataRes[0]) { setImportSqliteInfo(`Tabella "${target}" vuota`); setImportStatus(null); return }
-    const cols = dataRes[0].columns
-    const rawRows = dataRes[0].values.map((vals: any[]) => {
-      const row: Record<string, any> = {}
-      cols.forEach((col: string, i: number) => { row[col] = vals[i] })
-      return row
-    })
-    const hasImages = !!colMap.image
-    // Diagnostica immagini: campiona le prime 3 righe con immagine non nulla
-    let imgDiag = ''
-    if (colMap.image) {
-      const imgCol = colMap.image
-      const nonNull = rawRows.filter((r: Record<string, any>) => r[imgCol] != null && r[imgCol] !== '').slice(0, 3)
-      if (nonNull.length === 0) {
-        imgDiag = ' · ⚠️ colonna immagine trovata ma tutti i valori sono NULL'
-      } else {
-        const sample = nonNull[0][imgCol]
-        const sampleType = sample instanceof Uint8Array
-          ? `BLOB ${sample.length} bytes`
-          : typeof sample === 'string'
-            ? `stringa "${String(sample).slice(0, 40)}"`
-            : `tipo: ${typeof sample}`
-        imgDiag = ` · 🖼️ ${nonNull.length} immagini · tipo: ${sampleType}`
+
+    // ── Schema MIT patente A/B: domande + immagini + categorie ──────────────
+    const tl = tables.map(t => t.toLowerCase())
+    const isMITSchema = tl.includes('domande') && tl.includes('immagini')
+    let dataRes: any[]
+    let rawRows: Record<string, any>[]
+
+    if (isMITSchema) {
+      setImportStatus('Schema MIT rilevato — JOIN domande + immagini + categorie...')
+      const hasCategorie = tl.includes('categorie')
+      const joinQuery = hasCategorie
+        ? `SELECT d.id, d.domanda, d.risposta,
+                  c.nome AS categoria,
+                  i.data AS immagine, i.mime AS immagine_mime
+           FROM domande d
+           LEFT JOIN categorie c ON d.categoria_id = c.id
+           LEFT JOIN immagini i ON i.domanda_id = d.id`
+        : `SELECT d.id, d.domanda, d.risposta,
+                  i.data AS immagine, i.mime AS immagine_mime
+           FROM domande d
+           LEFT JOIN immagini i ON i.domanda_id = d.id`
+      dataRes = db.exec(joinQuery)
+      db.close()
+      if (!dataRes[0]) { setImportSqliteInfo('Query JOIN vuota'); setImportStatus(null); return }
+      const cols = dataRes[0].columns
+      rawRows = dataRes[0].values.map((vals: any[]) => {
+        const row: Record<string, any> = {}
+        cols.forEach((col: string, i: number) => { row[col] = vals[i] })
+        return row
+      })
+      const withImg = rawRows.filter(r => r.immagine != null).length
+      setImportSqliteInfo(`Schema MIT · ${rawRows.length} domande · 🖼️ ${withImg} con immagine`)
+    } else {
+      // ── Schema generico: singola tabella ──────────────────────────────────
+      const preferred = ['questions','domande','quiz','question','quizzes','domande_quiz']
+      const target = tables.find(t => preferred.includes(t.toLowerCase())) || tables[0]
+      const colRes = db.exec(`PRAGMA table_info("${target}")`)
+      const colNames: string[] = (colRes[0]?.values || []).map((v: any) => String(v[1]))
+      const colMap = buildColumnMap(colNames)
+      if (!colMap.question) { db.close(); throw new Error(`Colonna "question" non trovata. Colonne rilevate: ${colNames.join(', ')}`) }
+      setImportStatus('Lettura domande...')
+      dataRes = db.exec(`SELECT * FROM "${target}"`)
+      db.close()
+      if (!dataRes[0]) { setImportSqliteInfo(`Tabella "${target}" vuota`); setImportStatus(null); return }
+      const cols = dataRes[0].columns
+      rawRows = dataRes[0].values.map((vals: any[]) => {
+        const row: Record<string, any> = {}
+        cols.forEach((col: string, i: number) => { row[col] = vals[i] })
+        return row
+      })
+      // Diagnostica immagini
+      let imgDiag = ''
+      if (colMap.image) {
+        const imgCol = colMap.image
+        const nonNull = rawRows.filter((r: Record<string, any>) => r[imgCol] != null && r[imgCol] !== '').slice(0, 3)
+        if (nonNull.length === 0) {
+          imgDiag = ' · ⚠️ colonna immagine trovata ma tutti i valori sono NULL'
+        } else {
+          const sample = nonNull[0][imgCol]
+          const sampleType = sample instanceof Uint8Array
+            ? `BLOB ${sample.length} bytes`
+            : typeof sample === 'string'
+              ? `stringa "${String(sample).slice(0, 40)}"`
+              : `tipo: ${typeof sample}`
+          imgDiag = ` · 🖼️ ${nonNull.length} immagini · tipo: ${sampleType}`
+        }
       }
+      setImportSqliteInfo(`Tabella "${target}" · ${colNames.length} colonne · ${rawRows.length} righe${imgDiag}`)
     }
-    setImportSqliteInfo(`Tabella "${target}" · ${colNames.length} colonne · ${rawRows.length} righe${imgDiag}`)
-    setImportStatus(hasImages ? 'Elaborazione immagini...' : null)
+
+    setImportStatus('Elaborazione domande...')
+    // Per schema MIT le colonne sono già normalizzate, buildColumnMap funziona su entrambi
+    const colMap = buildColumnMap(Object.keys(rawRows[0] || {}))
     const valid: Array<Omit<Question, 'id'>> = []
     const errors: string[] = []
     rawRows.forEach((row: Record<string, any>, i: number) => {
