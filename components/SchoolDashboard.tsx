@@ -11,6 +11,7 @@ import {
   generateAccessCode,
   getSchoolAccessCodes,
   School,
+  LICENSE_TYPES,
 } from '@/lib/supabase'
 import { Building2, Users, TrendingUp, CheckCircle, Clock, LogOut, Settings, ChevronDown, ChevronUp, Key, Copy, Check, Plus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -74,6 +75,7 @@ export default function SchoolDashboard() {
     plan_type: 'last_minute' as 'last_minute' | 'senza_pensieri',
     duration_days: 30,
     max_uses: 1,
+    license_type: '',
   })
 
   // ─── Carica dati ─────────────────────────────────────────────────────────
@@ -138,6 +140,10 @@ export default function SchoolDashboard() {
 
   async function handleGenerateCode() {
     if (!school) return
+    if (!generateForm.license_type) {
+      alert('Seleziona il tipo di patente')
+      return
+    }
     setGenerating(true)
     try {
       await generateAccessCode(
@@ -146,7 +152,8 @@ export default function SchoolDashboard() {
         generateForm.duration_days,
         generateForm.max_uses,
         undefined,
-        school.id
+        school.id,
+        generateForm.license_type
       )
       setShowGenerateForm(false)
       await loadCodes()
@@ -450,7 +457,20 @@ export default function SchoolDashboard() {
             {showGenerateForm && (
               <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-blue-900/10">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Genera nuovo codice</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo patente <span className="text-red-500">*</span></label>
+                    <select
+                      value={generateForm.license_type}
+                      onChange={e => setGenerateForm(f => ({ ...f, license_type: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="">— Seleziona tipo patente —</option>
+                      {LICENSE_TYPES.map(lt => (
+                        <option key={lt.id} value={lt.id}>{lt.label}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Piano</label>
                     <select
@@ -542,6 +562,11 @@ export default function SchoolDashboard() {
                       <span className="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
                         {c.plan_type === 'last_minute' ? 'Ultimo Minuto' : 'Senza Pensieri'}
                       </span>
+                      {c.license_type && (
+                        <span className="text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
+                          {LICENSE_TYPES.find(lt => lt.id === c.license_type)?.label || c.license_type}
+                        </span>
+                      )}
                       <span className="text-xs text-gray-500 dark:text-gray-400">{c.duration_days}gg</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         Usi: {c.used_count}/{c.max_uses}

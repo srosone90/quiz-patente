@@ -48,6 +48,7 @@ export interface UserProfile {
   subscription_expires_at?: string
   role?: string
   school_id?: number
+  license_type?: string
 }
 
 export interface School {
@@ -90,6 +91,7 @@ export interface AccessCode {
   qr_code_url?: string
   notes?: string
   school_id?: number
+  license_type?: string
 }
 
 // Funzioni helper per autenticazione
@@ -371,7 +373,8 @@ export async function generateAccessCode(
   durationDays: number,
   maxUses: number = 1,
   expiresAt?: string,
-  schoolId?: number
+  schoolId?: number,
+  licenseType?: string
 ) {
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -394,7 +397,8 @@ export async function generateAccessCode(
       max_uses: maxUses,
       created_by: user.id,
       expires_at: expiresAt || null,
-      school_id: schoolId || null
+      school_id: schoolId || null,
+      license_type: licenseType || null
     }])
     .select()
 
@@ -669,12 +673,16 @@ export async function getMySchoolLicenses(): Promise<{ data: string[]; error: an
 
   const { data: profile } = await supabase
     .from('user_profiles')
-    .select('school_id')
+    .select('school_id, license_type')
     .eq('id', user.id)
     .single()
 
   if (!profile?.school_id) return { data: [], error: null }
 
+  // Se lo studente ha una patente specifica dal codice, mostra solo quella
+  if (profile.license_type) return { data: [profile.license_type], error: null }
+
+  // Altrimenti mostra tutte le patenti della scuola (fallback)
   return getSchoolLicenses(profile.school_id)
 }
 

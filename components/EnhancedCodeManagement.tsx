@@ -11,7 +11,8 @@ import {
   deactivateAccessCode,
   generateAccessCode,
   type AccessCode,
-  type School
+  type School,
+  LICENSE_TYPES
 } from '@/lib/supabase'
 
 export default function EnhancedCodeManagement() {
@@ -41,6 +42,7 @@ export default function EnhancedCodeManagement() {
   const [generateForm, setGenerateForm] = useState({
     school_id: '' as string | number,
     school_name: '',
+    license_type: '',
     plan_type: 'last_minute' as 'last_minute' | 'senza_pensieri',
     duration_days: 30,
     max_uses: 1,
@@ -134,6 +136,7 @@ export default function EnhancedCodeManagement() {
       const schoolName = generateForm.school_id
         ? (schools.find(s => s.id === schoolId)?.name || generateForm.school_name)
         : generateForm.school_name
+      const licenseType = generateForm.license_type || undefined
       
       // Genera il numero specificato di codici
       for (let i = 0; i < quantity; i++) {
@@ -143,7 +146,8 @@ export default function EnhancedCodeManagement() {
           generateForm.duration_days,
           generateForm.max_uses,
           generateForm.expires_at || undefined,
-          schoolId
+          schoolId,
+          licenseType
         )
         generatedCodes.push(newCode)
       }
@@ -173,6 +177,7 @@ export default function EnhancedCodeManagement() {
       setGenerateForm({
         school_id: '',
         school_name: '',
+        license_type: '',
         plan_type: 'last_minute',
         duration_days: 30,
         max_uses: 1,
@@ -555,6 +560,25 @@ export default function EnhancedCodeManagement() {
             </h3>
             
             <form onSubmit={handleGenerateCode} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Tipo Patente
+                </label>
+                <select
+                  value={generateForm.license_type}
+                  onChange={(e) => setGenerateForm({ ...generateForm, license_type: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                >
+                  <option value="">— Generico (no patente specifica) —</option>
+                  {LICENSE_TYPES.map(lt => (
+                    <option key={lt.id} value={lt.id}>{lt.label}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Lo studente vedrà solo il corso per questa patente
+                </p>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Scuola Guida
