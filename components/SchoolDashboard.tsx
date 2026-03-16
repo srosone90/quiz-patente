@@ -10,6 +10,7 @@ import {
   updateSchool,
   generateAccessCode,
   getSchoolAccessCodes,
+  getSchoolLicenses,
   School,
   LICENSE_TYPES,
 } from '@/lib/supabase'
@@ -71,6 +72,7 @@ export default function SchoolDashboard() {
   const [showGenerateForm, setShowGenerateForm] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
+  const [enabledLicenses, setEnabledLicenses] = useState<string[]>([])
   const [generateForm, setGenerateForm] = useState({
     plan_type: 'last_minute' as 'last_minute' | 'senza_pensieri',
     duration_days: 30,
@@ -95,6 +97,10 @@ export default function SchoolDashboard() {
       phone: schoolData.phone,
       email: schoolData.email,
     } : {})
+
+    if (schoolData?.id) {
+      getSchoolLicenses(schoolData.id).then(({ data }) => setEnabledLicenses(data || [])).catch(() => {})
+    }
 
     const { data: rawStudents } = await getSchoolStudents()
     if (!rawStudents || rawStudents.length === 0) {
@@ -466,7 +472,7 @@ export default function SchoolDashboard() {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     >
                       <option value="">— Seleziona tipo patente —</option>
-                      {LICENSE_TYPES.map(lt => (
+                      {LICENSE_TYPES.filter(lt => enabledLicenses.includes(lt.id)).map(lt => (
                         <option key={lt.id} value={lt.id}>{lt.label}</option>
                       ))}
                     </select>
