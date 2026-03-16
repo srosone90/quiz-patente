@@ -12,7 +12,8 @@ import {
   getAdminQuestionStats,
   getB2BDashboardStats,
   updateUser,
-  deleteUser
+  deleteUser,
+  supabase
 } from '@/lib/supabase'
 import B2BClients from '@/components/B2BClients'
 import B2BCalendar from '@/components/B2BCalendar'
@@ -90,12 +91,21 @@ export default function AdminDashboard() {
 
   async function checkAdminAccess() {
     try {
-      // Usa getUserProfile per leggere il ruolo (evita problemi RLS con isAdmin())
-      const { data: profile } = await getUserProfile()
-      const isAdminUser = profile?.role === 'admin'
-      
-      if (!isAdminUser) {
-        router.push('/dashboard')
+      // Usa getSession (legge da cache locale, nessuna network call)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) {
+        router.push('/login')
+        return
+      }
+      // Query diretta al profilo
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
+
+      if (profile?.role !== 'admin') {
+        router.push('/')
         return
       }
       
