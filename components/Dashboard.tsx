@@ -77,6 +77,12 @@ export default function Dashboard() {
       const isAdminRole = profileData?.role === 'admin'
       setIsAdminUser(isAdminRole)
 
+      // Reindirizza school_admin alla loro dashboard dedicata
+      if (profileData?.role === 'school_admin') {
+        router.push('/school')
+        return
+      }
+
       // Carica scuola e licenze — non bloccante (tabelle potrebbero non esistere ancora)
       getMySchool().then(({ data }) => setMySchool(data)).catch(() => {})
       getMySchoolLicenses().then(({ data }) => setSchoolLicenses(data || [])).catch(() => {})
