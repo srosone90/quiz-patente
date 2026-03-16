@@ -30,28 +30,45 @@ async function verifyAdmin(request: NextRequest) {
 
   const token = authHeader.slice(7)
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('[verifyAdmin] Missing NEXT_PUBLIC env vars')
+    return false
+  }
+
   try {
-    // Verify JWT by passing it explicitly to Supabase Auth (Supabase-recommended server pattern)
-    const supabaseVerify = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
-    const { data: { user }, error } = await supabaseVerify.auth.getUser(token)
-    if (error || !user) {
-      console.log('[verifyAdmin] Auth error:', error)
+    // 1. Decode JWT payload locally to extract user ID (sub claim)
+    //    We don't verify the signature here — PostgREST does that independently.
+    const b64 = token.split('.')[1]?.replace(/-/g, '+').replace(/_/g, '/')
+    if (!b64) return false
+    const payload = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'))
+    const userId = payload.sub as string | undefined
+    if (!userId) return false
+
+    // 2. Create a Supabase client that injects the user's JWT into every PostgREST request.
+    //    PostgREST verifies the JWT signature and sets auth.uid() accordingly.
+    //    If the JWT is invalid/forged, PostgREST rejects the request and returns an error.
+    const client = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+
+    // 3. Read the user's own profile.
+    //    RLS policy "auth.uid() = id" allows each user to read their own row.
+    //    If the JWT is invalid, PostgREST returns an error (not data) — so isAdmin = false.
+    const { data: profile, error } = await client
+      .from('user_profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      console.log('[verifyAdmin] DB/JWT error:', error.code, error.message)
       return false
     }
 
-    // Check admin role via service-role client (bypasses RLS)
-    const supabaseAdmin = getSupabaseAdmin()
-    const { data: profile } = await supabaseAdmin
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    console.log('[verifyAdmin] user:', user.id, 'role:', profile?.role)
+    console.log('[verifyAdmin] userId:', userId, 'role:', profile?.role)
     return profile?.role === 'admin'
   } catch (err) {
     console.error('[verifyAdmin] Exception:', err)
