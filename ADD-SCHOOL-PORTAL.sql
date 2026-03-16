@@ -32,10 +32,12 @@ CREATE INDEX IF NOT EXISTS idx_access_codes_school_id  ON access_codes(school_id
 ALTER TABLE schools ENABLE ROW LEVEL SECURITY;
 
 -- Admin: tutto
+DROP POLICY IF EXISTS "Admin full access on schools" ON schools;
 CREATE POLICY "Admin full access on schools" ON schools
   USING (EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = 'admin'));
 
 -- School admin: legge solo la propria scuola
+DROP POLICY IF EXISTS "School admin reads own school" ON schools;
 CREATE POLICY "School admin reads own school" ON schools
   FOR SELECT USING (
     EXISTS (
@@ -47,6 +49,7 @@ CREATE POLICY "School admin reads own school" ON schools
   );
 
 -- School admin: aggiorna solo la propria scuola
+DROP POLICY IF EXISTS "School admin updates own school" ON schools;
 CREATE POLICY "School admin updates own school" ON schools
   FOR UPDATE USING (
     EXISTS (

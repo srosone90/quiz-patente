@@ -89,6 +89,7 @@ export interface AccessCode {
   expires_at?: string
   qr_code_url?: string
   notes?: string
+  school_id?: number
 }
 
 // Funzioni helper per autenticazione
@@ -369,7 +370,8 @@ export async function generateAccessCode(
   planType: 'last_minute' | 'senza_pensieri',
   durationDays: number,
   maxUses: number = 1,
-  expiresAt?: string
+  expiresAt?: string,
+  schoolId?: number
 ) {
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -391,7 +393,8 @@ export async function generateAccessCode(
       duration_days: durationDays,
       max_uses: maxUses,
       created_by: user.id,
-      expires_at: expiresAt || null
+      expires_at: expiresAt || null,
+      school_id: schoolId || null
     }])
     .select()
 
@@ -409,6 +412,17 @@ export async function getAllAccessCodes() {
   const { data, error } = await supabase
     .from('access_codes')
     .select('*, code_redemptions(count)')
+    .order('created_at', { ascending: false })
+
+  return { data, error }
+}
+
+// Ottieni i codici di una scuola (school_admin)
+export async function getSchoolAccessCodes(schoolId: number) {
+  const { data, error } = await supabase
+    .from('access_codes')
+    .select('*')
+    .eq('school_id', schoolId)
     .order('created_at', { ascending: false })
 
   return { data, error }

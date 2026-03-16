@@ -412,8 +412,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Redeem Code Card - Solo per utenti free E NON in beta mode */}
-        {!isPremium && !isFreeBetaMode && (
+        {/* Redeem Code Card - Solo per utenti free (indipendentemente dalla beta mode) */}
+        {profile?.subscription_type === 'free' && (
           <div className="card bg-gradient-to-br from-purple-50/80 via-white to-pink-50/80 dark:from-dark-card dark:via-dark-card dark:to-dark-hover border-2 border-purple-200 dark:border-purple-900/30 shadow-card">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
               <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-3xl shadow-lg">

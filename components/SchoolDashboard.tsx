@@ -8,9 +8,11 @@ import {
   getSchoolStudents,
   getSchoolStudentStats,
   updateSchool,
+  generateAccessCode,
+  getSchoolAccessCodes,
   School,
 } from '@/lib/supabase'
-import { Building2, Users, TrendingUp, CheckCircle, Clock, LogOut, Settings, ChevronDown, ChevronUp } from 'lucide-react'
+import { Building2, Users, TrendingUp, CheckCircle, Clock, LogOut, Settings, ChevronDown, ChevronUp, Key, Copy, Check, Plus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 // ─── Tipi locali ─────────────────────────────────────────────────────────────
@@ -29,7 +31,7 @@ interface Student {
   passed_count?: number
 }
 
-type ActiveTab = 'students' | 'settings'
+type ActiveTab = 'students' | 'codes' | 'settings'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -61,6 +63,18 @@ export default function SchoolDashboard() {
 
   // Espansione dettaglio studente
   const [expandedStudent, setExpandedStudent] = useState<string | null>(null)
+
+  // Codici di accesso
+  const [codes, setCodes] = useState<any[]>([])
+  const [loadingCodes, setLoadingCodes] = useState(false)
+  const [showGenerateForm, setShowGenerateForm] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [copiedCode, setCopiedCode] = useState<string | null>(null)
+  const [generateForm, setGenerateForm] = useState({
+    plan_type: 'last_minute' as 'last_minute' | 'senza_pensieri',
+    duration_days: 30,
+    max_uses: 1,
+  })
 
   // ─── Carica dati ─────────────────────────────────────────────────────────
 
@@ -107,6 +121,47 @@ export default function SchoolDashboard() {
   }, [router])
 
   useEffect(() => { loadData() }, [loadData])
+
+  // ─── Codici ────────────────────────────────────────────────────────────────
+
+  const loadCodes = useCallback(async () => {
+    if (!school) return
+    setLoadingCodes(true)
+    const { data } = await getSchoolAccessCodes(school.id)
+    setCodes(data || [])
+    setLoadingCodes(false)
+  }, [school])
+
+  useEffect(() => {
+    if (activeTab === 'codes') loadCodes()
+  }, [activeTab, loadCodes])
+
+  async function handleGenerateCode() {
+    if (!school) return
+    setGenerating(true)
+    try {
+      await generateAccessCode(
+        school.name,
+        generateForm.plan_type,
+        generateForm.duration_days,
+        generateForm.max_uses,
+        undefined,
+        school.id
+      )
+      setShowGenerateForm(false)
+      await loadCodes()
+    } catch (err: any) {
+      alert('Errore: ' + (err.message || 'Impossibile generare il codice'))
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  function copyToClipboard(code: string) {
+    navigator.clipboard.writeText(code)
+    setCopiedCode(code)
+    setTimeout(() => setCopiedCode(null), 2000)
+  }
 
   // ─── Logout ────────────────────────────────────────────────────────────────
 
@@ -203,6 +258,7 @@ export default function SchoolDashboard() {
         <div className="flex gap-2 bg-white dark:bg-gray-800 rounded-lg p-1.5 border border-gray-200 dark:border-gray-700 w-fit">
           {([
             { id: 'students', label: '👥 Studenti' },
+            { id: 'codes',    label: '🔑 Codici' },
             { id: 'settings', label: '⚙️ Impostazioni scuola' },
           ] as const).map(tab => (
             <button
@@ -368,6 +424,136 @@ export default function SchoolDashboard() {
                 {savingSchool ? 'Salvataggio...' : 'Salva modifiche'}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* ── Tab: Codici di accesso ─────────────────────────────────────── */}
+        {activeTab === 'codes' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-gray-900 dark:text-white">Codici di accesso</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                  Genera e distribuisci ai tuoi studenti
+                </p>
+              </div>
+              <button
+                onClick={() => setShowGenerateForm(f => !f)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition"
+              >
+                <Plus className="w-4 h-4" />
+                Nuovo codice
+              </button>
+            </div>
+
+            {/* Form generazione */}
+            {showGenerateForm && (
+              <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-blue-900/10">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Genera nuovo codice</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Piano</label>
+                    <select
+                      value={generateForm.plan_type}
+                      onChange={e => setGenerateForm(f => ({ ...f, plan_type: e.target.value as any }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="last_minute">Ultimo Minuto</option>
+                      <option value="senza_pensieri">Senza Pensieri</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Durata (giorni)</label>
+                    <select
+                      value={generateForm.duration_days}
+                      onChange={e => setGenerateForm(f => ({ ...f, duration_days: Number(e.target.value) }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value={30}>30 giorni</option>
+                      <option value={60}>60 giorni</option>
+                      <option value={90}>90 giorni</option>
+                      <option value={180}>180 giorni</option>
+                      <option value={365}>365 giorni</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Usi massimi</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={generateForm.max_uses}
+                      onChange={e => setGenerateForm(f => ({ ...f, max_uses: Math.max(1, Number(e.target.value)) }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleGenerateCode}
+                    disabled={generating}
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition"
+                  >
+                    {generating ? 'Generazione...' : 'Genera codice'}
+                  </button>
+                  <button
+                    onClick={() => setShowGenerateForm(false)}
+                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                  >
+                    Annulla
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Lista codici */}
+            {loadingCodes ? (
+              <div className="p-12 text-center text-gray-500 dark:text-gray-400 text-sm">Caricamento...</div>
+            ) : codes.length === 0 ? (
+              <div className="p-12 text-center text-gray-500 dark:text-gray-400">
+                <Key className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">Nessun codice ancora</p>
+                <p className="text-sm mt-1">Clicca "Nuovo codice" per generare il primo codice per i tuoi studenti.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                {codes.map((c: any) => {
+                  const isExhausted = c.used_count >= c.max_uses
+                  const statusLabel = !c.is_active ? 'Disattivato' : isExhausted ? 'Esaurito' : 'Attivo'
+                  const statusClass = !c.is_active
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                    : isExhausted
+                    ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                    : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                  return (
+                    <div key={c.id} className="px-6 py-4 flex flex-wrap items-center gap-3">
+                      <code className="font-mono text-sm font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-md flex-shrink-0">
+                        {c.code}
+                      </code>
+                      <button
+                        onClick={() => copyToClipboard(c.code)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition"
+                        title="Copia codice"
+                      >
+                        {copiedCode === c.code
+                          ? <Check className="w-4 h-4 text-green-600" />
+                          : <Copy className="w-4 h-4" />}
+                      </button>
+                      <span className="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                        {c.plan_type === 'last_minute' ? 'Ultimo Minuto' : 'Senza Pensieri'}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{c.duration_days}gg</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Usi: {c.used_count}/{c.max_uses}
+                      </span>
+                      <span className={`ml-auto px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}`}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
