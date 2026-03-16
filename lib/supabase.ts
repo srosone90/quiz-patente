@@ -598,6 +598,7 @@ export async function getAllQuestions(licenseType?: string, category?: string) {
     .order('license_type', { ascending: true })
     .order('category', { ascending: true })
     .order('id', { ascending: true })
+    .limit(100000)
 
   if (licenseType) query = query.eq('license_type', licenseType)
   if (category) query = query.eq('category', category)

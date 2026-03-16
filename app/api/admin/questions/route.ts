@@ -101,3 +101,41 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: error.message || 'Errore aggiornamento' }, { status: 500 })
   }
 }
+
+// POST: importa domande in bulk (batch da 500, service role bypassa RLS)
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { questions, accessToken } = body
+
+    if (!await verifyAdminToken(accessToken)) {
+      return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
+    }
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return NextResponse.json({ error: 'questions è richiesto' }, { status: 400 })
+    }
+
+    const supabaseAdmin = getSupabaseAdmin()
+    const CHUNK = 500
+    let inserted = 0
+    const errors: string[] = []
+
+    for (let i = 0; i < questions.length; i += CHUNK) {
+      const chunk = questions.slice(i, i + CHUNK)
+      const { data, error } = await supabaseAdmin
+        .from('questions')
+        .insert(chunk)
+        .select('id')
+      if (error) {
+        errors.push(`Batch ${Math.floor(i / CHUNK) + 1}: ${error.message}`)
+      } else {
+        inserted += data?.length ?? 0
+      }
+    }
+
+    return NextResponse.json({ success: true, inserted, errors })
+  } catch (error: any) {
+    console.error('Errore bulk import questions:', error)
+    return NextResponse.json({ error: error.message || 'Errore import' }, { status: 500 })
+  }
+}

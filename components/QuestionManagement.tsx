@@ -509,18 +509,29 @@ export default function QuestionManagement() {
   async function handleImport() {
     if (importParsed.length === 0) return
     setImporting(true)
-    const rows = importForceLicense
-      ? importParsed.map(q => ({ ...q, license_type: importForceLicense }))
-      : importParsed
-    const { data, error } = await bulkCreateQuestions(rows)
-    const inserted = data?.length ?? 0
-    const errors = error ? [error.message] : []
-    setImportResult({ inserted, errors })
-    setImporting(false)
-    if (inserted > 0) {
-      loadQuestions()
-      loadCategories()
+    setImportStatus(`Invio di ${importParsed.length} domande al server...`)
+    try {
+      const rows = importForceLicense
+        ? importParsed.map(q => ({ ...q, license_type: importForceLicense }))
+        : importParsed
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/admin/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questions: rows, accessToken: session?.access_token }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Errore import')
+      setImportResult({ inserted: json.inserted, errors: json.errors ?? [] })
+      if (json.inserted > 0) {
+        loadQuestions()
+        loadCategories()
+      }
+    } catch (e: any) {
+      setImportResult({ inserted: 0, errors: [e.message] })
     }
+    setImportStatus(null)
+    setImporting(false)
   }
 
   function closeImport() {
