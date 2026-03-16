@@ -111,18 +111,7 @@ export default function AdminDashboard() {
   }
 
   async function loadAllData() {
-    // Utenti: usa API route con service role key (bypassa RLS)
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return
-      const res = await fetch('/api/admin/users', {
-        headers: { Authorization: `Bearer ${session.access_token}` }
-      })
-      if (res.ok) {
-        const json = await res.json()
-        setUsers(json.users || [])
-      }
-    }).catch(console.error)
-
+    getAllUsers().then(({ data }) => setUsers(data || [])).catch(console.error)
     getAllAccessCodes().then(({ data }) => setCodes((data as AccessCode[]) || [])).catch(console.error)
     getAdminGlobalStats().then(({ data }) => setStats(data)).catch(console.error)
     getAdminQuestionStats().then(({ data }) => setQuestionStats(data?.slice(0, 20) || [])).catch(console.error)
