@@ -1,9 +1,13 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 // Mittente delle email — assicurati che il dominio sia verificato su Resend
 const FROM_EMAIL = 'PatentiApp <noreply@patentiapp.it>'
+
+function getResend() {
+  const key = process.env.RESEND_API_KEY
+  if (!key) throw new Error('RESEND_API_KEY non configurata')
+  return new Resend(key)
+}
 
 export interface SchoolWelcomeEmailData {
   to: string
@@ -108,7 +112,7 @@ export async function sendSchoolWelcomeEmail(data: SchoolWelcomeEmailData) {
 </html>
 `
 
-  const { data: resendData, error } = await resend.emails.send({
+  const { data: resendData, error } = await getResend().emails.send({
     from: FROM_EMAIL,
     to,
     subject: `Benvenuto su PatentiApp — I tuoi codici per ${schoolName}`,
