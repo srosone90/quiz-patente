@@ -43,7 +43,11 @@ export async function DELETE(request: NextRequest) {
     const body = await request.json()
     const { ids, accessToken } = body
 
-    if (!await verifyAdminToken(accessToken)) {
+    console.log('[bulk-delete] ids:', ids?.length, 'hasToken:', !!accessToken)
+
+    const isAdmin = await verifyAdminToken(accessToken)
+    console.log('[bulk-delete] isAdmin:', isAdmin)
+    if (!isAdmin) {
       return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
     }
     if (!Array.isArray(ids) || ids.length === 0) {
@@ -53,15 +57,17 @@ export async function DELETE(request: NextRequest) {
     const supabaseAdmin = getSupabaseAdmin()
 
     // Prima elimina le risposte collegate (evita FK constraint)
-    await supabaseAdmin.from('quiz_answers').delete().in('question_id', ids)
+    const { error: qaErr } = await supabaseAdmin.from('quiz_answers').delete().in('question_id', ids)
+    if (qaErr) console.warn('[bulk-delete] quiz_answers error (ignorato):', qaErr.message)
 
     // Poi elimina le domande
-    const { error } = await supabaseAdmin.from('questions').delete().in('id', ids)
+    const { error, count } = await supabaseAdmin.from('questions').delete().in('id', ids)
+    console.log('[bulk-delete] delete result error:', error, 'count:', count)
     if (error) throw error
 
     return NextResponse.json({ success: true, deleted: ids.length })
   } catch (error: any) {
-    console.error('Errore bulk delete questions:', error)
+    console.error('[bulk-delete] ERRORE:', error)
     return NextResponse.json({ error: error.message || 'Errore eliminazione' }, { status: 500 })
   }
 }
