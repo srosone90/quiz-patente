@@ -9,11 +9,13 @@ import {
   generateAccessCode, 
   getAllAccessCodes,
   getAllUsers,
+  getAllSchools,
   getAdminQuestionStats,
   getB2BDashboardStats,
   updateUser,
   deleteUser,
-  supabase
+  supabase,
+  School,
 } from '@/lib/supabase'
 import B2BClients from '@/components/B2BClients'
 import B2BCalendar from '@/components/B2BCalendar'
@@ -55,6 +57,7 @@ interface User {
   subscription_expires_at: string | null
   created_at: string
   role?: string
+  school_id?: number | null
 }
 
 interface QuestionStat {
@@ -74,6 +77,7 @@ export default function AdminDashboard() {
   const [codes, setCodes] = useState<AccessCode[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [questionStats, setQuestionStats] = useState<QuestionStat[]>([])
+  const [schools, setSchools] = useState<School[]>([])
   const [activeTab, setActiveTab] = useState<'overview' | 'codes' | 'users' | 'questions' | 'b2b_clients' | 'b2b_calendar' | 'b2b_contracts' | 'crm' | 'analytics' | 'marketing' | 'question_mgmt' | 'schools'>('overview')
   
   // Form state per generazione codici
@@ -112,6 +116,7 @@ export default function AdminDashboard() {
 
   async function loadAllData() {
     getAllUsers().then(({ data }) => setUsers(data || [])).catch(console.error)
+    getAllSchools().then(({ data }) => setSchools((data as School[]) || [])).catch(console.error)
     getAllAccessCodes().then(({ data }) => setCodes((data as AccessCode[]) || [])).catch(console.error)
     getAdminGlobalStats().then(({ data }) => setStats(data)).catch(console.error)
     getAdminQuestionStats().then(({ data }) => setQuestionStats(data?.slice(0, 20) || [])).catch(console.error)
@@ -162,11 +167,28 @@ export default function AdminDashboard() {
         return
       }
 
-      alert('Ruolo aggiornato con successo!')
+      // Se il nuovo ruolo non è school_admin, rimuovi anche la scuola assegnata
+      if (newRole !== 'school_admin') {
+        await updateUser(userId, { school_id: null })
+      }
+
       loadAllData()
     } catch (error: any) {
       console.error('Errore modifica ruolo:', error)
       alert(`Errore: ${error.message || error}`)
+    }
+  }
+
+  async function handleAssignSchool(userId: string, schoolId: number | null) {
+    try {
+      const result = await updateUser(userId, { school_id: schoolId })
+      if (result.error) {
+        alert(`Errore assegnazione scuola: ${result.error}`)
+        return
+      }
+      loadAllData()
+    } catch (error: any) {
+      console.error('Errore assegnazione scuola:', error)
     }
   }
 
@@ -484,7 +506,6 @@ export default function AdminDashboard() {
                         ? new Date(user.subscription_expires_at).toLocaleDateString('it-IT')
                         : 'N/A'
                       const createdDate = new Date(user.created_at).toLocaleDateString('it-IT')
-                      const isUserAdmin = user.role === 'admin'
                       
                       return (
                         <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-900">
@@ -502,18 +523,35 @@ export default function AdminDashboard() {
                             </select>
                           </td>
                           <td className="py-3 px-6 text-sm">
-                            <select
-                              value={user.role || 'user'}
-                              onChange={(e) => handleUpdateUserRole(user.id, e.target.value)}
-                              className={`px-2 py-1 rounded-md text-xs font-medium border border-gray-300 dark:border-gray-600 cursor-pointer ${
-                                isUserAdmin
-                                  ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
-                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                              }`}
-                            >
-                              <option value="user">User</option>
-                              <option value="admin">👑 Admin</option>
-                            </select>
+                            <div className="flex flex-col gap-1">
+                              <select
+                                value={user.role || 'user'}
+                                onChange={(e) => handleUpdateUserRole(user.id, e.target.value)}
+                                className={`px-2 py-1 rounded-md text-xs font-medium border border-gray-300 dark:border-gray-600 cursor-pointer ${
+                                  user.role === 'admin'
+                                    ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
+                                    : user.role === 'school_admin'
+                                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }`}
+                              >
+                                <option value="user">User</option>
+                                <option value="school_admin">🏫 School Admin</option>
+                                <option value="admin">👑 Admin</option>
+                              </select>
+                              {user.role === 'school_admin' && (
+                                <select
+                                  value={user.school_id ?? ''}
+                                  onChange={(e) => handleAssignSchool(user.id, e.target.value ? Number(e.target.value) : null)}
+                                  className="px-2 py-1 rounded-md text-xs border border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 cursor-pointer"
+                                >
+                                  <option value="">— Seleziona scuola —</option>
+                                  {schools.map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3 px-6 text-sm text-gray-700 dark:text-gray-300">{expiresDate}</td>
                           <td className="py-3 px-6 text-sm text-gray-700 dark:text-gray-300">{createdDate}</td>
