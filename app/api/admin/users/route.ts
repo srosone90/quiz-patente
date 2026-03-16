@@ -31,10 +31,23 @@ async function verifyAdmin(request: NextRequest) {
     return false
   }
 
-  const supabaseAdmin = getSupabaseAdmin()
   const token = authHeader.replace('Bearer ', '')
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
-  
+
+  // Use anon-key client + user token to verify the JWT (standard Supabase pattern)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('[verifyAdmin] Missing NEXT_PUBLIC env vars')
+    return false
+  }
+
+  const supabaseWithToken = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { autoRefreshToken: false, persistSession: false }
+  })
+
+  const { data: { user }, error } = await supabaseWithToken.auth.getUser()
+
   if (error || !user) {
     console.log('[verifyAdmin] Auth error:', error)
     return false
@@ -42,24 +55,16 @@ async function verifyAdmin(request: NextRequest) {
 
   console.log('[verifyAdmin] Checking user:', user.id)
 
-  // Prova prima con id, poi con user_id
-  let profile = await supabaseAdmin
+  // Use service-role client to check the role (bypasses RLS)
+  const supabaseAdmin = getSupabaseAdmin()
+  const { data: profile, error: profileError } = await supabaseAdmin
     .from('user_profiles')
-    .select('role, id, user_id')
+    .select('role')
     .eq('id', user.id)
     .single()
 
-  if (!profile.data) {
-    console.log('[verifyAdmin] Try with user_id')
-    profile = await supabaseAdmin
-      .from('user_profiles')
-      .select('role, id, user_id')
-      .eq('user_id', user.id)
-      .single()
-  }
-
-  console.log('[verifyAdmin] Profile found:', profile.data)
-  return profile.data?.role === 'admin'
+  console.log('[verifyAdmin] Profile found:', profile, 'error:', profileError)
+  return profile?.role === 'admin'
 }
 
 // PATCH: Modifica utente
