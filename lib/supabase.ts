@@ -718,7 +718,11 @@ export async function updateUserSubscription(
 // Modifica utente (admin) - ruolo, subscription, etc.
 export async function updateUser(userId: string, updates: any) {
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    let { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      const { data: refreshed } = await supabase.auth.refreshSession()
+      session = refreshed.session
+    }
     if (!session) throw new Error('Non autenticato')
 
     const response = await fetch('/api/admin/users', {
@@ -743,7 +747,11 @@ export async function updateUser(userId: string, updates: any) {
 // Elimina utente (admin)
 export async function deleteUser(userId: string) {
   try {
-    const { data: { session } } = await supabase.auth.getSession()
+    let { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      const { data: refreshed } = await supabase.auth.refreshSession()
+      session = refreshed.session
+    }
     if (!session) throw new Error('Non autenticato')
 
     const response = await fetch('/api/admin/users', {
