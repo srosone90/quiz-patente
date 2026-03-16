@@ -227,9 +227,37 @@ export default function QuestionManagement() {
       ? raw.answers.map((a: any) => str(a)).filter(Boolean)
       : [raw.answer_1, raw.answer_2, raw.answer_3, raw.answer_4].map(str).filter(Boolean)
 
+    let correct_answer = str(raw.correct_answer)
+
+    // ─ Auto-detect Vero/Falso ──────────────────────────────────────────────
+    // Scatta se: nessuna risposta multipla trovata E correct_answer è un valore booleano
+    if (answers.length < 2 && correct_answer) {
+      const BOOL_TRUE  = /^(v|1|true|vero|sì|si|yes|y|t|esatto|giusto|correct)$/i
+      const BOOL_FALSE = /^(f|0|false|falso|no|n|sbagliato|errato|wrong)$/i
+      if (BOOL_TRUE.test(correct_answer) || BOOL_FALSE.test(correct_answer)) {
+        const isTrue = BOOL_TRUE.test(correct_answer)
+        answers.splice(0, answers.length, 'Vero', 'Falso')
+        correct_answer = isTrue ? 'Vero' : 'Falso'
+      }
+    }
+    // Gestisci anche il caso in cui le risposte siano già ["V","F"] o ["1","0"] ecc.
+    if (answers.length === 2) {
+      const BOOL_TRUE  = /^(v|1|true|vero|sì|si|yes|y|t|esatto|giusto)$/i
+      const BOOL_FALSE = /^(f|0|false|falso|no|n|sbagliato|errato)$/i
+      const a0v = BOOL_TRUE.test(answers[0]) || BOOL_FALSE.test(answers[0])
+      const a1v = BOOL_TRUE.test(answers[1]) || BOOL_FALSE.test(answers[1])
+      if (a0v && a1v) {
+        const norm = (v: string) => BOOL_TRUE.test(v) ? 'Vero' : 'Falso'
+        answers[0] = norm(answers[0])
+        answers[1] = norm(answers[1])
+        if (BOOL_TRUE.test(correct_answer) || BOOL_FALSE.test(correct_answer))
+          correct_answer = BOOL_TRUE.test(correct_answer) ? 'Vero' : 'Falso'
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────
+
     if (answers.length < 2) return { q: {} as any, err: `"${question.slice(0, 40)}..." ha meno di 2 risposte` }
 
-    const correct_answer = str(raw.correct_answer)
     if (!correct_answer) return { q: {} as any, err: `"${question.slice(0, 40)}..." senza risposta corretta` }
     if (!answers.includes(correct_answer)) return { q: {} as any, err: `"${question.slice(0, 40)}..." risposta corretta non presente nelle risposte` }
 
@@ -278,7 +306,7 @@ export default function QuestionManagement() {
     set('answer_3',      find('answer_3','answer3','a3','ans3','option_c','risposta_3','risposta3','opzione_c'))
     set('answer_4',      find('answer_4','answer4','a4','ans4','option_d','risposta_4','risposta4','opzione_d'))
     set('answers',       find('answers','risposte','opzioni'))
-    set('correct_answer',find('correct_answer','correct','answer_key','risposta_corretta','risposta_giusta','key','giusta'))
+    set('correct_answer',find('correct_answer','correct','answer_key','risposta_corretta','risposta_giusta','key','giusta','risposta','answer','ans','valore','vf','bool','isCorrect','is_correct','result'))
     set('category',      find('category','categoria','argomento','topic','subject','materia','sezione'))
     set('explanation',   find('explanation','spiegazione','note','rationale','motivazione','commento','dettaglio'))
     set('license_type',  find('license_type','tipo_patente','patente','license','tipo'))
