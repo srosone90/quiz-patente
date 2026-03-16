@@ -575,24 +575,35 @@ export default function QuestionManagement() {
   async function handleImport() {
     if (importParsed.length === 0) return
     setImporting(true)
-    setImportStatus(`Invio di ${importParsed.length} domande al server...`)
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       const rows = importForceLicense
         ? importParsed.map(q => ({ ...q, license_type: importForceLicense }))
         : importParsed
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch('/api/admin/questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions: rows, accessToken: session?.access_token }),
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Errore import')
-      setImportResult({ inserted: json.inserted, errors: json.errors ?? [] })
-      if (json.inserted > 0) {
-        loadQuestions()
-        loadCategories()
+
+      // ── Fase 1: importa domande senza immagini (payload leggero) ──────────
+      const rowsNoImg = rows.map(q => { const { image_url, ...rest } = q as any; return rest })
+      const CHUNK = 200
+      let inserted = 0
+      const errors: string[] = []
+
+      for (let i = 0; i < rowsNoImg.length; i += CHUNK) {
+        const chunk = rowsNoImg.slice(i, i + CHUNK)
+        setImportStatus(`Invio domande ${i + 1}–${Math.min(i + CHUNK, rowsNoImg.length)} di ${rowsNoImg.length}...`)
+        const res = await fetch('/api/admin/questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questions: chunk, accessToken: session?.access_token }),
+        })
+        let json: any
+        try { json = await res.json() } catch { json = { error: `HTTP ${res.status}: ${res.statusText}` } }
+        if (!res.ok) { errors.push(`Batch ${Math.floor(i / CHUNK) + 1}: ${json.error}`); continue }
+        inserted += json.inserted ?? 0
+        if (json.errors?.length) errors.push(...json.errors)
       }
+
+      setImportResult({ inserted, errors })
+      if (inserted > 0) { loadQuestions(); loadCategories() }
     } catch (e: any) {
       setImportResult({ inserted: 0, errors: [e.message] })
     }
