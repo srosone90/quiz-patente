@@ -5,6 +5,21 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+// Tipi patente supportati
+export const LICENSE_TYPES = [
+  { id: 'taxi_ncc', label: 'Taxi / NCC' },
+  { id: 'ab',       label: 'Patente A e B' },
+  { id: 'am',       label: 'Patente AM' },
+  { id: 'cd',       label: 'Patente C e D' },
+  { id: 'cqc',      label: 'CQC' },
+  { id: 'nautica',  label: 'Patente Nautica' },
+  { id: 'adr',      label: 'ADR' },
+  { id: 'cap_kb',   label: 'CAP KB' },
+  { id: 'revisione', label: 'Revisione Patenti' },
+] as const
+
+export type LicenseTypeId = typeof LICENSE_TYPES[number]['id']
+
 // Tipi per il database
 export interface Question {
   id: number
@@ -13,6 +28,7 @@ export interface Question {
   correct_answer: string
   category?: string
   explanation?: string
+  license_type?: string
 }
 
 export interface QuizResult {
@@ -31,6 +47,20 @@ export interface UserProfile {
   subscription_type: 'free' | 'last_minute' | 'senza_pensieri'
   subscription_expires_at?: string
   role?: string
+  school_id?: number
+}
+
+export interface School {
+  id: number
+  name: string
+  city?: string
+  address?: string
+  phone?: string
+  email?: string
+  logo_url?: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
 }
 
 export interface QuizAnswer {
@@ -235,19 +265,26 @@ export async function getQuestionsByCategory(category: string, limit: number = 2
   return { data, error }
 }
 
-// Ottieni categorie disponibili
-export async function getCategories() {
-  const { data, error } = await supabase
+// Ottieni categorie disponibili (filtra per tipo patente se specificato)
+export async function getCategories(licenseType?: string) {
+  let query = supabase
     .from('questions')
     .select('category')
+    .not('category', 'is', null)
     .order('category')
+
+  if (licenseType) {
+    query = query.eq('license_type', licenseType)
+  }
+
+  const { data, error } = await query
 
   if (data) {
     const uniqueCategories = [...new Set(data.map(d => d.category).filter(Boolean))]
-    return { data: uniqueCategories, error: null }
+    return { data: uniqueCategories as string[], error: null }
   }
 
-  return { data: [], error }
+  return { data: [] as string[], error }
 }
 
 // Riscatta codice di accesso
@@ -419,6 +456,212 @@ export async function deactivateAccessCode(codeId: number) {
     .select()
 
   return { data, error }
+}
+
+// ============================================
+// FUNZIONI PORTAL SCUOLE
+// ============================================
+
+// Ottieni ruolo utente corrente (per redirect post-login)
+export async function getCurrentUserRole(): Promise<'admin' | 'school_admin' | 'user' | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if (data?.role === 'admin') return 'admin'
+  if (data?.role === 'school_admin') return 'school_admin'
+  return 'user'
+}
+
+// Verifica se l'utente è school_admin
+export async function isSchoolAdmin(): Promise<boolean> {
+  const role = await getCurrentUserRole()
+  return role === 'school_admin'
+}
+
+// Ottieni la scuola dell'utente corrente (school_admin o studente)
+export async function getMySchool(): Promise<{ data: School | null; error: any }> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: null, error: 'Not authenticated' }
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('school_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.school_id) return { data: null, error: null }
+
+  const { data, error } = await supabase
+    .from('schools')
+    .select('*')
+    .eq('id', profile.school_id)
+    .single()
+
+  return { data, error }
+}
+
+// Ottieni tutti gli studenti della scuola (per school_admin)
+export async function getSchoolStudents() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: [], error: 'Not authenticated' }
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('school_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.school_id) return { data: [], error: 'No school assigned' }
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('id, full_name, email, subscription_type, subscription_expires_at, created_at')
+    .eq('school_id', profile.school_id)
+    .not('role', 'eq', 'school_admin')
+    .not('role', 'eq', 'admin')
+    .order('created_at', { ascending: false })
+
+  return { data: data || [], error }
+}
+
+// Ottieni statistiche studenti per school_admin
+export async function getSchoolStudentStats(studentIds: string[]) {
+  if (studentIds.length === 0) return { data: [], error: null }
+
+  const { data, error } = await supabase
+    .from('quiz_results')
+    .select('user_id, score_percentage, correct_answers, total_questions, completed_at')
+    .in('user_id', studentIds)
+    .order('completed_at', { ascending: false })
+
+  return { data: data || [], error }
+}
+
+// Aggiorna profilo scuola (school_admin)
+export async function updateSchool(schoolId: number, updates: Partial<Pick<School, 'name' | 'city' | 'address' | 'phone' | 'email'>>) {
+  const { data, error } = await supabase
+    .from('schools')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', schoolId)
+    .select()
+    .single()
+  return { data, error }
+}
+
+// Admin: crea nuova scuola
+export async function createSchool(s: Pick<School, 'name' | 'city' | 'address' | 'phone' | 'email'>) {
+  const { data, error } = await supabase
+    .from('schools')
+    .insert([s])
+    .select()
+    .single()
+  return { data, error }
+}
+
+// Admin: ottieni tutte le scuole
+export async function getAllSchools() {
+  const { data, error } = await supabase
+    .from('schools')
+    .select('*')
+    .order('name')
+  return { data: data || [], error }
+}
+
+// ============================================
+// FUNZIONI CRUD DOMANDE (ADMIN)
+// ============================================
+
+export async function getAllQuestions(licenseType?: string, category?: string) {
+  let query = supabase
+    .from('questions')
+    .select('*')
+    .order('license_type', { ascending: true })
+    .order('category', { ascending: true })
+    .order('id', { ascending: true })
+
+  if (licenseType) query = query.eq('license_type', licenseType)
+  if (category) query = query.eq('category', category)
+
+  const { data, error } = await query
+  return { data, error }
+}
+
+export async function createQuestion(q: Omit<Question, 'id'>) {
+  const { data, error } = await supabase
+    .from('questions')
+    .insert([q])
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function updateQuestion(id: number, q: Partial<Omit<Question, 'id'>>) {
+  const { data, error } = await supabase
+    .from('questions')
+    .update({ ...q, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function deleteQuestion(id: number) {
+  const { error } = await supabase
+    .from('questions')
+    .delete()
+    .eq('id', id)
+  return { error }
+}
+
+// ============================================
+// FUNZIONI LICENZE SCUOLA
+// ============================================
+
+// Ottieni i tipi patente abilitati per una scuola (admin/school_admin)
+export async function getSchoolLicenses(schoolId: number): Promise<{ data: string[]; error: any }> {
+  const { data, error } = await supabase
+    .from('school_licenses')
+    .select('license_type')
+    .eq('school_id', schoolId)
+    .eq('is_active', true)
+
+  return { data: (data || []).map((r: any) => r.license_type), error }
+}
+
+// Imposta i tipi patente abilitati per una scuola (admin) — sostituisce tutto
+export async function setSchoolLicenses(schoolId: number, licenseTypes: string[]): Promise<{ error: any }> {
+  // Elimina tutte le licenze esistenti per questa scuola
+  const { error: delError } = await supabase
+    .from('school_licenses')
+    .delete()
+    .eq('school_id', schoolId)
+
+  if (delError) return { error: delError }
+  if (licenseTypes.length === 0) return { error: null }
+
+  const rows = licenseTypes.map(lt => ({ school_id: schoolId, license_type: lt, is_active: true }))
+  const { error } = await supabase.from('school_licenses').insert(rows)
+  return { error }
+}
+
+// Ottieni i tipi patente abilitati per la scuola dell'utente corrente (studente)
+export async function getMySchoolLicenses(): Promise<{ data: string[]; error: any }> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { data: [], error: 'Not authenticated' }
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('school_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.school_id) return { data: [], error: null }
+
+  return getSchoolLicenses(profile.school_id)
 }
 
 // Ottieni tutti gli utenti (admin)

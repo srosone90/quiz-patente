@@ -20,6 +20,8 @@ import CRMPipeline from '@/components/CRMPipeline'
 import EnhancedCodeManagement from '@/components/EnhancedCodeManagement'
 import AdvancedAnalytics from '@/components/AdvancedAnalytics'
 import MarketingPlan from '@/components/MarketingPlan'
+import QuestionManagement from '@/components/QuestionManagement'
+import SchoolManagement from '@/components/SchoolManagement'
 
 interface GlobalStats {
   total_users: number
@@ -70,7 +72,7 @@ export default function AdminDashboard() {
   const [codes, setCodes] = useState<AccessCode[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [questionStats, setQuestionStats] = useState<QuestionStat[]>([])
-  const [activeTab, setActiveTab] = useState<'overview' | 'codes' | 'users' | 'questions' | 'b2b_clients' | 'b2b_calendar' | 'b2b_contracts' | 'crm' | 'analytics' | 'marketing'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'codes' | 'users' | 'questions' | 'b2b_clients' | 'b2b_calendar' | 'b2b_contracts' | 'crm' | 'analytics' | 'marketing' | 'question_mgmt' | 'schools'>('overview')
   
   // Form state per generazione codici
   const [schoolName, setSchoolName] = useState('')
@@ -294,6 +296,8 @@ export default function AdminDashboard() {
             { id: 'overview', label: 'Panoramica' },
             { id: 'analytics', label: '📊 Analytics Avanzata' },            { id: 'marketing', label: '🚀 Piano Marketing' },            { id: 'codes', label: 'Codici Accesso' },
             { id: 'users', label: 'Utenti' },
+            { id: 'schools', label: '🏫 Scuole Guida' },
+            { id: 'question_mgmt', label: '📝 Gestione Domande' },
             { id: 'questions', label: 'Statistiche Domande' },
             { id: 'b2b_clients', label: 'Clienti B2B' },
             { id: 'b2b_calendar', label: 'Calendario' },
@@ -558,6 +562,16 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
+        )}
+
+        {/* Contenuto Tab: Scuole Guida */}
+        {activeTab === 'schools' && (
+          <SchoolManagement />
+        )}
+
+        {/* Contenuto Tab: Gestione Domande (CRUD) */}
+        {activeTab === 'question_mgmt' && (
+          <QuestionManagement />
         )}
 
         {/* Contenuto Tab: Question Stats */}

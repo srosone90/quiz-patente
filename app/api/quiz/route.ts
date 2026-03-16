@@ -5,13 +5,17 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const plan = searchParams.get('plan') || 'free'
+    const licenseType = searchParams.get('license_type') || 'taxi_ncc'
     const limit = plan === 'free' ? 10 : 20
 
-    // Carica domande dal database Supabase
-    const { data: questions, error } = await supabase
+    // Carica domande dal database Supabase filtrate per tipo patente
+    let query = supabase
       .from('questions')
       .select('*')
-      .limit(1000) // Prendi tutte le domande disponibili
+      .eq('license_type', licenseType)
+      .limit(1000)
+
+    const { data: questions, error } = await query
 
     if (error) {
       console.error('Errore Supabase:', error)

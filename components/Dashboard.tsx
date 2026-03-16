@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { getCurrentUser, getQuizHistory, getUserProfile, signOut, isAdmin, QuizResult } from '@/lib/supabase'
+import { getCurrentUser, getQuizHistory, getUserProfile, signOut, isAdmin, getMySchool, getMySchoolLicenses, School, QuizResult, LICENSE_TYPES } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Home, Trophy, Users, User, Gift, Calendar, Target, RotateCcw, BarChart3, TrendingUp, Map, FileText, FileEdit, Rocket, Star, PartyPopper, Lightbulb, Ticket, CreditCard, Clock } from 'lucide-react'
 import CategorySelector from './CategorySelector'
@@ -27,6 +27,8 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState('overview')
   const [isAdminUser, setIsAdminUser] = useState(false)
+  const [mySchool, setMySchool] = useState<School | null>(null)
+  const [schoolLicenses, setSchoolLicenses] = useState<string[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -74,6 +76,14 @@ export default function Dashboard() {
       // Verifica se l'utente è admin
       const adminCheck = await isAdmin()
       setIsAdminUser(adminCheck)
+
+      // Carica scuola di appartenenza (se presente)
+      const { data: schoolData } = await getMySchool()
+      setMySchool(schoolData)
+
+      // Carica tipi patente abilitati dalla scuola (se presente)
+      const { data: licenses } = await getMySchoolLicenses()
+      setSchoolLicenses(licenses || [])
       
       setError(null)
     } catch (error) {
@@ -224,6 +234,12 @@ export default function Dashboard() {
                 {user?.user_metadata?.full_name || user?.email?.split('@')[0]}
               </span>! 👋
             </p>
+            {mySchool && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5">
+                <span>🏫</span>
+                <span>Autoscuola <strong className="text-gray-700 dark:text-gray-200">{mySchool.name}</strong></span>
+              </p>
+            )}
           </div>
           <button
             onClick={handleLogout}
@@ -422,41 +438,87 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Action Buttons - Grid centrato quando c'è solo 1 pulsante */}
-        <div className={`grid gap-4 ${isPremium || isFreeBetaMode ? 'sm:grid-cols-1 place-items-center' : 'sm:grid-cols-2'}`}>
+        {/* ── Avvia Quiz: card per tipo patente (o singola card per beta/utenti liberi) ── */}
+        {(() => {
+          // Determina quali tipi patente mostrare
+          // - Studente con scuola e licenze abilitate → le card della scuola
+          // - Tutti gli altri (beta, utenti liberi) → solo taxi_ncc
+          const plan = isPremium ? 'premium' : 'free'
+          const activeLicenseTypes =
+            mySchool && schoolLicenses.length > 0
+              ? LICENSE_TYPES.filter(lt => schoolLicenses.includes(lt.id))
+              : LICENSE_TYPES.filter(lt => lt.id === 'taxi_ncc')
+
+          // Icone per tipo patente
+          const licenseIcons: Record<string, string> = {
+            taxi_ncc: '🚕',
+            ab:       '🚗',
+            am:       '🛵',
+            cd:       '🚛',
+            cqc:      '📋',
+            nautica:  '⛵',
+            adr:      '☣️',
+            cap_kb:   '🚁',
+            revisione:'🔄',
+          }
+
+          if (activeLicenseTypes.length === 1) {
+            // Singola card centrata (caso beta o scuola con 1 solo tipo)
+            const lt = activeLicenseTypes[0]
+            return (
+              <div className="flex justify-center">
+                <Link
+                  href={`/quiz?plan=${plan}&license_type=${lt.id}`}
+                  className="group card-hover p-8 flex flex-col items-center text-center bg-gradient-to-br from-primary-600 to-primary-700 text-white border-none w-full max-w-md"
+                >
+                  <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">{licenseIcons[lt.id] || '📝'}</div>
+                  <h3 className="text-2xl font-bold mb-1">{isPremium ? 'Inizia Quiz Premium' : (isFreeBetaMode ? 'Inizia Quiz Gratuito' : 'Prova Quiz Demo')}</h3>
+                  <p className="text-primary-100 text-sm">{lt.label} · {isPremium ? '20 domande • 30 min' : '10 domande • 10 min'}</p>
+                </Link>
+              </div>
+            )
+          }
+
+          // Griglia card per ogni tipo patente abilitato
+          return (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-3 flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary-600" /> Avvia Quiz
+              </h3>
+              <div className={`grid gap-3 ${activeLicenseTypes.length <= 2 ? 'grid-cols-1 sm:grid-cols-2' : activeLicenseTypes.length <= 4 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
+                {activeLicenseTypes.map(lt => (
+                  <Link
+                    key={lt.id}
+                    href={`/quiz?plan=${plan}&license_type=${lt.id}`}
+                    className="group card-hover p-5 flex flex-col items-center text-center bg-gradient-to-br from-primary-600 to-primary-700 text-white border-none"
+                  >
+                    <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{licenseIcons[lt.id] || '📝'}</div>
+                    <h4 className="text-base font-bold mb-1">{lt.label}</h4>
+                    <p className="text-primary-100 text-xs">{isPremium ? '20 domande • 30 min' : '10 domande • 10 min'}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* 🔵 Beta mode: nascondi bottone piani premium */}
+        {!isPremium && !isFreeBetaMode && (
           <Link
-            href={`/quiz?plan=${isPremium ? 'premium' : 'free'}`}
-            className={`group card-hover p-8 flex flex-col items-center text-center bg-gradient-to-br from-primary-600 to-primary-700 text-white border-none ${isPremium || isFreeBetaMode ? 'w-full max-w-md' : 'w-full'}`}
+            href="/pricing"
+            className="group card-hover p-8 flex flex-col items-center text-center w-full"
           >
             <div className="mb-4 group-hover:scale-110 transition-transform">
-              <Target className="w-16 h-16" />
+              <Star className="w-16 h-16 text-accent-400" fill="currentColor" />
             </div>
-            <h3 className="text-2xl font-bold mb-2">
-              {isPremium ? 'Inizia Quiz Premium' : (isFreeBetaMode ? 'Inizia Quiz Gratuito' : 'Prova Quiz Demo')}
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">
+              Piani Premium
             </h3>
-            <p className="text-primary-100">
-              {isPremium ? '20 domande • 30 minuti' : '10 domande • 10 minuti'}
+            <p className="text-gray-600 dark:text-dark-text-secondary">
+              Scopri tutte le opzioni disponibili
             </p>
           </Link>
-
-          {/* 🔵 Beta mode: nascondi bottone piani premium */}
-          {!isPremium && !isFreeBetaMode && (
-            <Link
-              href="/pricing"
-              className="group card-hover p-8 flex flex-col items-center text-center w-full"
-            >
-              <div className="mb-4 group-hover:scale-110 transition-transform">
-                <Star className="w-16 h-16 text-accent-400" fill="currentColor" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-dark-text-primary mb-2">
-                Piani Premium
-              </h3>
-              <p className="text-gray-600 dark:text-dark-text-secondary">
-                Scopri tutte le opzioni disponibili
-              </p>
-            </Link>
-          )}
-        </div>
+        )}
           </div>
         )}
 

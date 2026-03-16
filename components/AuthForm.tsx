@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn, signUp } from '@/lib/supabase'
+import { signIn, signUp, getCurrentUserRole } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Car, Sparkles } from 'lucide-react'
 
@@ -25,7 +25,10 @@ export default function AuthForm() {
       if (isLogin) {
         const { error } = await signIn(email, password)
         if (error) throw error
-        router.push('/')
+        const role = await getCurrentUserRole()
+        if (role === 'admin') router.push('/admin')
+        else if (role === 'school_admin') router.push('/school')
+        else router.push('/')
         router.refresh()
       } else {
         const { data, error } = await signUp(email, password, fullName)

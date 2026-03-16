@@ -10,6 +10,7 @@ interface QuizEngineProps {
   plan?: 'free' | 'premium'
   category?: string
   mode?: 'review' | 'normal'
+  licenseType?: string
 }
 
 interface UserAnswer {
@@ -22,7 +23,7 @@ interface UserAnswer {
   explanation?: string
 }
 
-export default function QuizEngine({ plan = 'free', category, mode = 'normal' }: QuizEngineProps) {
+export default function QuizEngine({ plan = 'free', category, mode = 'normal', licenseType = 'taxi_ncc' }: QuizEngineProps) {
   const router = useRouter()
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -47,7 +48,7 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
 
   useEffect(() => {
     loadQuestions()
-  }, [plan, category, mode])
+  }, [plan, category, mode, licenseType])
 
   // Wake Lock: attiva quando quiz inizia, rilascia quando finisce
   useEffect(() => {
@@ -131,10 +132,11 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal' }:
         const shuffled = allCatQuestions.sort(() => Math.random() - 0.5)
         fetchedQuestions = shuffled.slice(0, isFree ? 10 : 20)
       } else {
-        // Modalità normale: domande random
+        // Modalità normale: domande random filtrate per tipo patente
         const { data, error } = await supabase
           .from('questions')
           .select('*')
+          .eq('license_type', licenseType)
         
         if (error) throw error
         

@@ -17,6 +17,7 @@ interface QuizPageProps {
     plan?: 'free' | 'premium'
     category?: string
     mode?: 'review' | 'normal'
+    license_type?: string
   }>
 }
 
@@ -25,6 +26,7 @@ export default async function QuizPage({ searchParams }: QuizPageProps) {
   const plan = params.plan || 'free'
   const category = params.category
   const mode = params.mode || 'normal'
+  const licenseType = params.license_type || 'taxi_ncc'
 
   return (
     <div className="min-h-screen bg-primary dark:bg-dark-bg">
@@ -58,6 +60,7 @@ export default async function QuizPage({ searchParams }: QuizPageProps) {
         plan={plan} 
         category={category} 
         mode={mode}
+        licenseType={licenseType}
       />
     </div>
   )
