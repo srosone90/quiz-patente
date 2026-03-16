@@ -508,9 +508,19 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal', l
 
       {/* Domanda */}
       <div className="card bg-white dark:bg-dark-card p-6 sm:p-8 mb-6 sm:mb-8 shadow-card-hover">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-8 text-primary-900 dark:text-white leading-relaxed">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-6 text-primary-900 dark:text-white leading-relaxed">
           {currentQuestion.question}
         </h2>
+
+        {currentQuestion.image_url && (
+          <div className="mb-6 flex justify-center">
+            <img
+              src={currentQuestion.image_url}
+              alt="Immagine domanda"
+              className="max-w-full max-h-72 rounded-lg border border-gray-200 dark:border-dark-border object-contain"
+            />
+          </div>
+        )}
 
         <div className="space-y-4">
           {answers.map((answer, index) => {
