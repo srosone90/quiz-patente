@@ -111,10 +111,7 @@ export default function AdminDashboard() {
   }
 
   async function loadAllData() {
-    const { data: usersData, error: usersError } = await getAllUsers()
-    if (usersError) alert('ERRORE UTENTI: ' + JSON.stringify(usersError))
-    setUsers(usersData || [])
-
+    getAllUsers().then(({ data }) => setUsers(data || [])).catch(console.error)
     getAllAccessCodes().then(({ data }) => setCodes((data as AccessCode[]) || [])).catch(console.error)
     getAdminGlobalStats().then(({ data }) => setStats(data)).catch(console.error)
     getAdminQuestionStats().then(({ data }) => setQuestionStats(data?.slice(0, 20) || [])).catch(console.error)
