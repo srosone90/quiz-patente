@@ -77,13 +77,9 @@ export default function Dashboard() {
       const isAdminRole = profileData?.role === 'admin'
       setIsAdminUser(isAdminRole)
 
-      // Carica scuola di appartenenza (se presente)
-      const { data: schoolData } = await getMySchool()
-      setMySchool(schoolData)
-
-      // Carica tipi patente abilitati dalla scuola (se presente)
-      const { data: licenses } = await getMySchoolLicenses()
-      setSchoolLicenses(licenses || [])
+      // Carica scuola e licenze — non bloccante (tabelle potrebbero non esistere ancora)
+      getMySchool().then(({ data }) => setMySchool(data)).catch(() => {})
+      getMySchoolLicenses().then(({ data }) => setSchoolLicenses(data || [])).catch(() => {})
       
       setError(null)
     } catch (error) {
