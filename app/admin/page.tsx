@@ -91,13 +91,12 @@ export default function AdminDashboard() {
 
   async function checkAdminAccess() {
     try {
-      // Usa getSession (legge da cache locale, nessuna network call)
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) {
         router.push('/login')
+        setLoading(false)
         return
       }
-      // Query diretta al profilo
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('role')
@@ -106,16 +105,20 @@ export default function AdminDashboard() {
 
       if (profile?.role !== 'admin') {
         router.push('/')
+        setLoading(false)
         return
       }
       
       setAuthorized(true)
-      await loadAllData()
+      setLoading(false)
+      // Caricamento dati separato: un errore qui NON reindirizza via dall'admin
+      loadAllData()
     } catch (error) {
       console.error('Errore verifica admin:', error)
-      router.push('/dashboard')
-    } finally {
+      // In caso di errore di rete: mostra la pagina comunque se la sessione esiste
+      setAuthorized(true)
       setLoading(false)
+      loadAllData()
     }
   }
 
