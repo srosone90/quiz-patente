@@ -376,12 +376,14 @@ export async function generateAccessCode(
   schoolId?: number,
   licenseType?: string
 ) {
-  const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) {
-    console.error('generateAccessCode: No user found')
-    throw new Error('User not authenticated')
+  // Assicura sessione fresca — stesso fix di updateUser/deleteUser
+  let { data: { session } } = await supabase.auth.getSession()
+  if (!session) {
+    const { data: refreshed } = await supabase.auth.refreshSession()
+    session = refreshed.session
   }
+  if (!session) throw new Error('User not authenticated')
+  const user = session.user
 
   const code = `${planType.toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
 
