@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn, signUp, getCurrentUserRole } from '@/lib/supabase'
+import { signIn, signUp } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Car, Sparkles } from 'lucide-react'
 
@@ -25,16 +25,8 @@ export default function AuthForm() {
       if (isLogin) {
         const { data: signInData, error } = await signIn(email, password)
         if (error) throw error
-        // Retry: leggi ruolo fino a 5 volte con 400ms di pausa
-        let role = null
-        for (let i = 0; i < 5; i++) {
-          await new Promise(resolve => setTimeout(resolve, 400))
-          role = await getCurrentUserRole()
-          if (role) break
-        }
-        if (role === 'admin') router.push('/admin')
-        else if (role === 'school_admin') router.push('/school')
-        else router.push('/')
+        // Redirect sempre a / — la dashboard gestisce il redirect a /admin se admin
+        router.push('/')
         router.refresh()
       } else {
         const { data, error } = await signUp(email, password, fullName)

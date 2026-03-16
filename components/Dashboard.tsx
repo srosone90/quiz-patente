@@ -74,7 +74,14 @@ export default function Dashboard() {
       setQuizHistory(historyData || [])
       
       // Leggi ruolo direttamente dal profilo già caricato (evita doppia query RLS)
-      setIsAdminUser(profileData?.role === 'admin')
+      const isAdminRole = profileData?.role === 'admin'
+      setIsAdminUser(isAdminRole)
+
+      // Se admin: redirect automatico a /admin
+      if (isAdminRole) {
+        router.replace('/admin')
+        return
+      }
 
       // Carica scuola di appartenenza (se presente)
       const { data: schoolData } = await getMySchool()
