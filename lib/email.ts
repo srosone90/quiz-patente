@@ -1,7 +1,9 @@
 import { Resend } from 'resend'
 
-// Mittente delle email — assicurati che il dominio sia verificato su Resend
-const FROM_EMAIL = 'PatentiApp <noreply@patentiapp.it>'
+// Mittente delle email — imposta RESEND_FROM_EMAIL nelle variabili d'ambiente
+// Esempio: 'PatentiApp <noreply@driverquizpa.com>'
+// Il dominio DEVE essere verificato su resend.com/domains
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'PatentiApp <onboarding@resend.dev>'
 
 function getResend() {
   const key = process.env.RESEND_API_KEY

@@ -45,7 +45,7 @@ async function handleSchoolOnboarding(session: any) {
   const licenseIds = [...new Set(orderItems.map(i => i.licenseId))]
   const { error: licErr } = await db
     .from('school_licenses')
-    .upsert(licenseIds.map(id => ({ school_id: school.id, license_type: id, is_enabled: true })))
+    .upsert(licenseIds.map(id => ({ school_id: school.id, license_type: id, is_active: true })))
   if (licErr) console.warn('school_licenses upsert warning:', licErr.message)
 
   // 3. Crea l'utente admin per la scuola
@@ -63,7 +63,7 @@ async function handleSchoolOnboarding(session: any) {
 
   // 4. Aggiorna il profilo utente con ruolo school_admin e school_id
   await db
-    .from('profiles')
+    .from('user_profiles')
     .upsert([{ id: adminUserId, full_name: schoolName, role: 'school_admin', school_id: school.id, subscription_type: 'free' }])
 
   // 5. Genera tutti i codici di accesso
@@ -150,9 +150,9 @@ export async function POST(request: NextRequest) {
           const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const raw = db as any
-          const { data: prof } = await raw.from('profiles').select('id').eq('email', customerEmail).maybeSingle()
+          const { data: prof } = await raw.from('user_profiles').select('id').eq('email', customerEmail).maybeSingle()
           if (prof?.id) {
-            await raw.from('profiles').update({ subscription_type: 'senza_pensieri', subscription_expires_at: expiresAt }).eq('id', prof.id)
+            await raw.from('user_profiles').update({ subscription_type: 'senza_pensieri', subscription_expires_at: expiresAt }).eq('id', prof.id)
             console.log(`Abbonamento attivato per: ${customerEmail}`)
           }
         }
