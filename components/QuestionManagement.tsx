@@ -589,7 +589,7 @@ export default function QuestionManagement() {
 
       for (let i = 0; i < rowsNoImg.length; i += CHUNK) {
         const chunk = rowsNoImg.slice(i, i + CHUNK)
-        setImportStatus(`Invio domande ${i + 1}–${Math.min(i + CHUNK, rowsNoImg.length)} di ${rowsNoImg.length}...`)
+        setImportStatus(`Fase 1/2 — Invio domande ${i + 1}–${Math.min(i + CHUNK, rowsNoImg.length)} di ${rowsNoImg.length}...`)
         const res = await fetch('/api/admin/questions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -602,7 +602,30 @@ export default function QuestionManagement() {
         if (json.errors?.length) errors.push(...json.errors)
       }
 
-      setImportResult({ inserted, errors })
+      // ── Fase 2: aggiorna image_url per le domande con immagine ───────────
+      const withImg = rows.filter((q: any) => q.image_url)
+      if (withImg.length > 0 && inserted > 0) {
+        const IMG_CHUNK = 50 // ~50 immagini × ~15KB = ~750KB, sotto il limite Vercel
+        let imgUpdated = 0
+        for (let i = 0; i < withImg.length; i += IMG_CHUNK) {
+          const chunk = withImg.slice(i, i + IMG_CHUNK)
+          setImportStatus(`Fase 2/2 — Collegamento immagini ${i + 1}–${Math.min(i + IMG_CHUNK, withImg.length)} di ${withImg.length}...`)
+          const imageUpdates = chunk.map((q: any) => ({ question: q.question, image_url: q.image_url }))
+          const res = await fetch('/api/admin/questions', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageUpdates, accessToken: session?.access_token }),
+          })
+          let json: any
+          try { json = await res.json() } catch { json = { error: `HTTP ${res.status}` } }
+          if (res.ok) imgUpdated += json.updated ?? 0
+          else errors.push(`Immagini batch ${Math.floor(i / IMG_CHUNK) + 1}: ${json.error}`)
+        }
+        setImportResult({ inserted, errors, imgUpdated } as any)
+      } else {
+        setImportResult({ inserted, errors })
+      }
+
       if (inserted > 0) { loadQuestions(); loadCategories() }
     } catch (e: any) {
       setImportResult({ inserted: 0, errors: [e.message] })

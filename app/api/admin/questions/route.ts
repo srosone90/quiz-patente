@@ -139,3 +139,38 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message || 'Errore import' }, { status: 500 })
   }
 }
+
+// PUT: aggiorna image_url per testo domanda (fase 2 import immagini)
+// Body: { imageUpdates: [{question: string, image_url: string}], accessToken: string }
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { imageUpdates, accessToken } = body
+
+    if (!await verifyAdminToken(accessToken)) {
+      return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
+    }
+    if (!Array.isArray(imageUpdates) || imageUpdates.length === 0) {
+      return NextResponse.json({ error: 'imageUpdates è richiesto' }, { status: 400 })
+    }
+
+    const supabaseAdmin = getSupabaseAdmin()
+    let updated = 0
+    const errors: string[] = []
+
+    for (const { question, image_url } of imageUpdates) {
+      if (!question || !image_url) continue
+      const { error } = await supabaseAdmin
+        .from('questions')
+        .update({ image_url })
+        .eq('question', question)
+      if (error) errors.push(`"${question.slice(0, 30)}...": ${error.message}`)
+      else updated++
+    }
+
+    return NextResponse.json({ success: true, updated, errors })
+  } catch (error: any) {
+    console.error('Errore update immagini:', error)
+    return NextResponse.json({ error: error.message || 'Errore update immagini' }, { status: 500 })
+  }
+}
