@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, Question, saveQuizResult, saveQuizAnswers, getQuestionsByCategory, getWrongAnswers, checkAndUnlockAchievements } from '@/lib/supabase'
+import { QUIZ_RULES, DEFAULT_QUIZ_RULE } from '@/lib/pricing'
 import { useWakeLock } from '@/hooks/useWakeLock'
 import { RotateCcw, Folder, FileEdit, Lightbulb, PartyPopper, BookOpen } from 'lucide-react'
 
@@ -43,8 +44,10 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal', l
   const { isSupported: wakeLockSupported, isLocked, request: requestWakeLock, release: releaseWakeLock } = useWakeLock()
 
   const isFree = plan === 'free'
-  const totalQuestions = mode === 'review' ? questions.length : (isFree ? 10 : 20)
-  const timeLimit = isFree ? 600 : 1800 // 10 min for free, 30 min for premium (in seconds)
+  const quizRule = QUIZ_RULES[licenseType] ?? DEFAULT_QUIZ_RULE
+  const totalQuestions = mode === 'review' ? questions.length : (isFree ? 10 : quizRule.totalQuestions)
+  const timeLimit = isFree ? 600 : quizRule.timeLimitSeconds
+  const maxErrors = isFree ? 1 : quizRule.maxErrors
 
   useEffect(() => {
     loadQuestions()
@@ -159,7 +162,7 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal', l
   const correctCount = userAnswers.filter(a => a.is_correct).length
   const incorrectCount = userAnswers.filter(a => !a.is_correct).length
   const scorePercentage = Math.round((correctCount / totalQuestions) * 100)
-  const hasPassed = scorePercentage >= 90
+  const hasPassed = incorrectCount <= maxErrors
 
   function handleAnswerSelect(answer: string) {
     if (showResult) return
@@ -389,14 +392,15 @@ export default function QuizEngine({ plan = 'free', category, mode = 'normal', l
             {hasPassed ? (
               <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-6 rounded-r-xl">
                 <p className="text-lg font-medium">
-                  Hai superato il quiz! Per l'esame è richiesta una percentuale del <strong className="text-green-700 dark:text-green-300">90%</strong>.
+                  Hai superato la simulazione! Hai commesso <strong className="text-green-700 dark:text-green-300">{incorrectCount} {incorrectCount === 1 ? 'errore' : 'errori'}</strong> su {totalQuestions} domande
+                  {' '}(limite: max <strong className="text-green-700 dark:text-green-300">{maxErrors}</strong>).
                 </p>
               </div>
             ) : (
               <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 p-6 rounded-r-xl">
                 <p className="text-lg font-medium">
-                  Per superare l'esame serve il <strong className="text-orange-700 dark:text-orange-300">90%</strong>.<br />
-                  Massimo <strong className="text-orange-700 dark:text-orange-300">2 errori</strong> su 20 domande.
+                  Non hai superato. Hai commesso <strong className="text-orange-700 dark:text-orange-300">{incorrectCount} {incorrectCount === 1 ? 'errore' : 'errori'}</strong> su {totalQuestions} domande.<br />
+                  Massimo consentito: <strong className="text-orange-700 dark:text-orange-300">{maxErrors} {maxErrors === 1 ? 'errore' : 'errori'}</strong>.
                 </p>
               </div>
             )}

@@ -56,3 +56,31 @@ export function getPriceInCents(licenseId: string): number {
   if (!pricing) return 0
   return Math.round(pricing.pricePerCode * 100)
 }
+
+// ============================================================
+// REGOLE QUIZ PER TIPO DI PATENTE
+// Modifica qui le regole di ogni simulazione d'esame
+// ============================================================
+
+export interface QuizRule {
+  /** Numero di domande per la simulazione ufficiale */
+  totalQuestions: number
+  /** Durata massima in secondi */
+  timeLimitSeconds: number
+  /** Errori massimi consentiti per superare l'esame */
+  maxErrors: number
+}
+
+export const QUIZ_RULES: Record<string, QuizRule> = {
+  ab:        { totalQuestions: 40, timeLimitSeconds: 30 * 60, maxErrors: 4 },
+  am:        { totalQuestions: 30, timeLimitSeconds: 20 * 60, maxErrors: 3 },
+  cd:        { totalQuestions: 30, timeLimitSeconds: 30 * 60, maxErrors: 3 },
+  cqc:       { totalQuestions: 30, timeLimitSeconds: 40 * 60, maxErrors: 3 },
+  nautica:   { totalQuestions: 30, timeLimitSeconds: 30 * 60, maxErrors: 3 },
+  adr:       { totalQuestions: 20, timeLimitSeconds: 30 * 60, maxErrors: 4 },
+  cap_kb:    { totalQuestions: 30, timeLimitSeconds: 20 * 60, maxErrors: 3 },
+  revisione: { totalQuestions: 30, timeLimitSeconds: 20 * 60, maxErrors: 3 },
+  taxi_ncc:  { totalQuestions: 30, timeLimitSeconds: 30 * 60, maxErrors: 4 },
+}
+
+export const DEFAULT_QUIZ_RULE: QuizRule = { totalQuestions: 30, timeLimitSeconds: 30 * 60, maxErrors: 3 }
